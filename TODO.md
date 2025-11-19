@@ -14,7 +14,6 @@ Sound:
 [] Improve the sound
 [] Make it possible to choose different sounds
 
-
 Design:
 [] Design a layout for the keyboard
 [] Add some visualizations of the sound
