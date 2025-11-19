@@ -1,5 +1,5 @@
-.test {
-    height: 10px;
-    width: 10px;
+.chord-key {
+    height: 200px;
+    width: 200px;
     border: solid 1px black
 }

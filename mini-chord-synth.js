@@ -1,4 +1,7 @@
-function playSound(freq = 440, velocity = 0.8) {
+const ctxt = new AudioContext();
+
+
+function playPiano(freq = 523.25, is_major=true) {
   // just a sound generated with chatgpt
   const now = ctxt.currentTime;
 
@@ -10,11 +13,17 @@ function playSound(freq = 440, velocity = 0.8) {
 
   osc1.type = 'sine';
   osc2.type = 'sine';
-  osc2.detune.value = 3;      // slight detune for richness
+  osc3.type = 'sine';
 
   osc1.frequency.value = freq;
-  osc2.frequency.value = freq * (2**(4/12));
-  osc3.frequency.value = freq * (2**(8/12));
+  let major_minor;
+  if (is_major) {
+    major_minor = 4
+  } else {
+    major_minor = 3
+  }
+  osc2.frequency.value = freq * (2**(major_minor/12));
+  osc3.frequency.value = freq * (2**(7/12));
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(6000, now);
@@ -26,6 +35,7 @@ function playSound(freq = 440, velocity = 0.8) {
   const release = 0.4;
 
   const g = gain.gain;
+  const velocity = 0.8;
   g.setValueAtTime(0, now);
   g.linearRampToValueAtTime(velocity, now + attack);
   g.linearRampToValueAtTime(velocity * sustain, now + attack + decay);
@@ -43,3 +53,5 @@ function playSound(freq = 440, velocity = 0.8) {
   osc2.stop(now + 3);
   osc3.stop(now + 3);
 }
+document.getElementById("key1").addEventListener("click", () => playPiano(523.25, true));
+document.getElementById("key2").addEventListener("click", () => playPiano(587.33, false));
