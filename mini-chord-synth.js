@@ -1,9 +1,15 @@
 const ctxt = new AudioContext();
 
+// At the moment hardcode to the C key
+const scaleBaseFreq = 523.25
 
-function playPiano(freq = 523.25, is_major=true) {
+const majorScale = [0, 2, 4, 5, 7, 9, 11]
+
+function playPiano(stepInScale, is_major=true) {
   // just a sound generated with chatgpt
   const now = ctxt.currentTime;
+  const number_of_half_steps_above_tonic = majorScale[stepInScale];
+  const freq = scaleBaseFreq * (2**(number_of_half_steps_above_tonic/12))
 
   const osc1 = ctxt.createOscillator();
   const osc2 = ctxt.createOscillator();
@@ -53,5 +59,7 @@ function playPiano(freq = 523.25, is_major=true) {
   osc2.stop(now + 3);
   osc3.stop(now + 3);
 }
-document.getElementById("key1").addEventListener("click", () => playPiano(523.25, true));
-document.getElementById("key2").addEventListener("click", () => playPiano(587.33, false));
+document.getElementById("key1").addEventListener("click", () => playPiano(0, true));
+document.getElementById("key2").addEventListener("click", () => playPiano(1, false));
+document.getElementById("key3").addEventListener("click", () => playPiano(2, false));
+document.getElementById("key4").addEventListener("click", () => playPiano(3, true));
