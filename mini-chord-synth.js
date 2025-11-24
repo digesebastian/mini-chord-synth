@@ -64,10 +64,15 @@ function playPiano(stepInScale) {
   osc2.stop(now + 3);
   osc3.stop(now + 3);
 }
-document.getElementById("key1").addEventListener("click", () => playPiano(0));
-document.getElementById("key2").addEventListener("click", () => playPiano(1));
-document.getElementById("key3").addEventListener("click", () => playPiano(2));
-document.getElementById("key4").addEventListener("click", () => playPiano(3));
-document.getElementById("key5").addEventListener("click", () => playPiano(4));
-document.getElementById("key6").addEventListener("click", () => playPiano(5));
-document.getElementById("key7").addEventListener("click", () => playPiano(6));
+
+function addKeys() {
+  const keys = document.getElementById("keys");
+  for (let i = 0; i < 7; i++) {
+    const k = document.createElement("button");
+    k.classList.add("chord-key");
+    k.addEventListener("click", () => playPiano(i))
+    keys.appendChild(k);
+  }
+}
+
+addKeys();
