@@ -1,7 +1,9 @@
 const ctxt = new AudioContext();
 
-// At the moment hardcode to the C key
-const scaleBaseFreq = 523.25
+// MODEL
+const C_frequency = 523.25
+
+let scale_base_freq = C_frequency
 
 const majorScale = [0, 2, 4, 5, 7, 9, 11]
 
@@ -15,10 +17,12 @@ const chordsInMajorScale = [
   [3, 6]
 ]
 
+// CONTROLLER
+
 function playPiano(stepInScale) {
   const now = ctxt.currentTime;
   const number_of_half_steps_above_tonic = majorScale[stepInScale];
-  const freq = scaleBaseFreq * (2**(number_of_half_steps_above_tonic/12))
+  const freq = scale_base_freq * (2**(number_of_half_steps_above_tonic/12))
 
   const osc1 = ctxt.createOscillator();
   const osc2 = ctxt.createOscillator();
@@ -64,6 +68,14 @@ function playPiano(stepInScale) {
   osc2.stop(now + 3);
   osc3.stop(now + 3);
 }
+
+function changeScale(newScale) {
+  scale_base_freq = C_frequency * (2**(newScale/12))
+}
+
+document.getElementById("scale-select").addEventListener("change", (e) => changeScale(e.target.value))
+
+// VIEW
 
 function addKeys() {
   const keys = document.getElementById("keys");
