@@ -1,6 +1,6 @@
 Keys:
-[] Create first key playing a C-major chord
-[] Create additional 6 keys playing remaining chords in C-scale
+[x] Create first key playing a C-major chord
+[x] Create additional 6 keys playing remaining chords in C-scale
 [] Make the keyboard playable using the pc keyboard
 
 Joystick:
