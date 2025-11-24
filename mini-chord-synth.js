@@ -1,9 +1,24 @@
 const ctxt = new AudioContext();
 
+// At the moment hardcode to the C key
+const scaleBaseFreq = 523.25
 
-function playPiano(freq = 523.25, is_major=true) {
-  // just a sound generated with chatgpt
+const majorScale = [0, 2, 4, 5, 7, 9, 11]
+
+const chordsInMajorScale = [
+  [4, 7],
+  [3, 7],
+  [3, 7],
+  [4, 7],
+  [4, 7],
+  [3, 7],
+  [3, 6]
+]
+
+function playPiano(stepInScale) {
   const now = ctxt.currentTime;
+  const number_of_half_steps_above_tonic = majorScale[stepInScale];
+  const freq = scaleBaseFreq * (2**(number_of_half_steps_above_tonic/12))
 
   const osc1 = ctxt.createOscillator();
   const osc2 = ctxt.createOscillator();
@@ -16,14 +31,10 @@ function playPiano(freq = 523.25, is_major=true) {
   osc3.type = 'sine';
 
   osc1.frequency.value = freq;
-  let major_minor;
-  if (is_major) {
-    major_minor = 4
-  } else {
-    major_minor = 3
-  }
-  osc2.frequency.value = freq * (2**(major_minor/12));
-  osc3.frequency.value = freq * (2**(7/12));
+  const third_note_in_chord = chordsInMajorScale[stepInScale][0]
+  const fifth_note_in_chord = chordsInMajorScale[stepInScale][1]
+  osc2.frequency.value = freq * (2**(third_note_in_chord/12));
+  osc3.frequency.value = freq * (2**(fifth_note_in_chord/12));
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(6000, now);
@@ -53,5 +64,15 @@ function playPiano(freq = 523.25, is_major=true) {
   osc2.stop(now + 3);
   osc3.stop(now + 3);
 }
-document.getElementById("key1").addEventListener("click", () => playPiano(523.25, true));
-document.getElementById("key2").addEventListener("click", () => playPiano(587.33, false));
+
+function addKeys() {
+  const keys = document.getElementById("keys");
+  for (let i = 0; i < 7; i++) {
+    const k = document.createElement("button");
+    k.classList.add("chord-key");
+    k.addEventListener("click", () => playPiano(i))
+    keys.appendChild(k);
+  }
+}
+
+addKeys();
