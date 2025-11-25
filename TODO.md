@@ -4,7 +4,7 @@ Keys:
 [] Make the keyboard playable using the pc keyboard
 
 Scales:
-[] Add a dropdown to change into the other major scales
+[x] Add a dropdown to change into the other major scales
 [] Add the option to change to a minor scale
 
 Joystick:

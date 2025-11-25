@@ -9,26 +9,37 @@ let scale_base_freq = C_frequency
 
 // CONTROLLER
 
+function modulate(baseFreq, semitones) {
+  return baseFreq * (2 ** (semitones / 12))
+}
+
+function getChordFreqs(stepInScale) {
+  const chord = majorScaleChords[stepInScale];
+  const chordRoot = modulate(scale_base_freq, chord[0])
+  const chordThird = modulate(scale_base_freq, chord[1])
+  const chordFifth = modulate(scale_base_freq, chord[2])
+
+  return [chordRoot, chordThird, chordFifth]
+}
+
 function playPiano(stepInScale) {
   const now = ctxt.currentTime;
-  const number_of_half_steps_above_tonic = majorScaleChords[stepInScale][0];
-  const freq = scale_base_freq * (2 ** (number_of_half_steps_above_tonic / 12))
+  const chordFreqs = getChordFreqs(stepInScale);
 
   const osc1 = ctxt.createOscillator();
   const osc2 = ctxt.createOscillator();
   const osc3 = ctxt.createOscillator();
-  const gain = ctxt.createGain();
-  const filter = ctxt.createBiquadFilter();
 
   osc1.type = 'sine';
   osc2.type = 'sine';
   osc3.type = 'sine';
 
-  osc1.frequency.value = freq;
-  const third_note_in_chord = majorScaleChords[stepInScale][1]
-  const fifth_note_in_chord = majorScaleChords[stepInScale][2]
-  osc2.frequency.value = scale_base_freq * (2 ** (third_note_in_chord / 12));
-  osc3.frequency.value = scale_base_freq * (2 ** (fifth_note_in_chord / 12));
+  osc1.frequency.value = chordFreqs[0];
+  osc2.frequency.value = chordFreqs[1];
+  osc3.frequency.value = chordFreqs[2];
+
+  const gain = ctxt.createGain();
+  const filter = ctxt.createBiquadFilter();
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(6000, now);
