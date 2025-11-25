@@ -22,7 +22,7 @@ const chordsInMajorScale = [
 function playPiano(stepInScale) {
   const now = ctxt.currentTime;
   const number_of_half_steps_above_tonic = majorScale[stepInScale];
-  const freq = scale_base_freq * (2**(number_of_half_steps_above_tonic/12))
+  const freq = scale_base_freq * (2 ** (number_of_half_steps_above_tonic / 12))
 
   const osc1 = ctxt.createOscillator();
   const osc2 = ctxt.createOscillator();
@@ -37,8 +37,8 @@ function playPiano(stepInScale) {
   osc1.frequency.value = freq;
   const third_note_in_chord = chordsInMajorScale[stepInScale][0]
   const fifth_note_in_chord = chordsInMajorScale[stepInScale][1]
-  osc2.frequency.value = freq * (2**(third_note_in_chord/12));
-  osc3.frequency.value = freq * (2**(fifth_note_in_chord/12));
+  osc2.frequency.value = freq * (2 ** (third_note_in_chord / 12));
+  osc3.frequency.value = freq * (2 ** (fifth_note_in_chord / 12));
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(6000, now);
@@ -57,8 +57,8 @@ function playPiano(stepInScale) {
   g.setTargetAtTime(0.0001, now + attack + decay + 0.8, release);
 
   osc1.connect(gain);
-  osc2.connect(gain);  
-  osc3.connect(gain);  
+  osc2.connect(gain);
+  osc3.connect(gain);
   gain.connect(filter).connect(ctxt.destination);
 
   osc1.start(now);
@@ -70,9 +70,8 @@ function playPiano(stepInScale) {
 }
 
 function changeScale(newScale) {
-  scale_base_freq = C_frequency * (2**(newScale/12))
+  scale_base_freq = C_frequency * (2 ** (newScale / 12))
 }
-
 document.getElementById("scale-select").addEventListener("change", (e) => changeScale(e.target.value))
 
 // VIEW
@@ -87,4 +86,36 @@ function addKeys() {
   }
 }
 
+function addScaleDropdownOptions() {
+  // scale names and number of semitones above C
+  const scaleMap = new Map([
+    ['C', 0],
+    ['C#', 1],
+    ['Db', 1],
+    ['D', 2],
+    ['D#', 3],
+    ['Eb', 3],
+    ['E', 4],
+    ['F', 5],
+    ['F#', 6],
+    ['Gb', 6],
+    ['G', 7],
+    ['G#', 8],
+    ['Ab', 8],
+    ['A', 9],
+    ['A#', 10],
+    ['Bb', 10], 
+    ['B', 11]
+  ]);
+
+  const dropdown = document.getElementById("scale-select")
+  scaleMap.forEach((v, k) => {
+    const option = document.createElement("option");
+    option.value = v;
+    option.textContent = k;
+    dropdown.appendChild(option)
+  })
+}
+
 addKeys();
+addScaleDropdownOptions();
