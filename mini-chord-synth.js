@@ -1,4 +1,4 @@
-import { majorScaleChords } from "./chords.js";
+import { scales, scaleNames } from "./scales.js";
 
 const ctxt = new AudioContext();
 
@@ -7,6 +7,8 @@ const C_frequency = 261.63
 
 let scale_base_freq = C_frequency
 
+let scale_type = 0;
+
 // CONTROLLER
 
 function modulate(baseFreq, semitones) {
@@ -14,7 +16,9 @@ function modulate(baseFreq, semitones) {
 }
 
 function getChordFreqs(stepInScale) {
-  const chord = majorScaleChords[stepInScale];
+  const scale = scales.get(scale_type);
+
+  const chord = scale[stepInScale];
   const chordRoot = modulate(scale_base_freq, chord[0])
   const chordThird = modulate(scale_base_freq, chord[1])
   const chordFifth = modulate(scale_base_freq, chord[2])
@@ -70,10 +74,16 @@ function playPiano(stepInScale) {
   osc3.stop(now + 3);
 }
 
-function changeScale(newScale) {
-  scale_base_freq = C_frequency * (2 ** (newScale / 12))
+function changeScaleRoot(root) {
+  scale_base_freq = C_frequency * (2 ** (parseInt(root) / 12))
 }
-document.getElementById("scale-select").addEventListener("change", (e) => changeScale(e.target.value))
+document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
+
+function changeScaleType(scaleType) {
+  scale_type = parseInt(scaleType);
+}
+document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
+
 
 // VIEW
 
@@ -87,7 +97,7 @@ function addKeys() {
   }
 }
 
-function addScaleDropdownOptions() {
+function addScaleRootDropdownOptions() {
   // scale names and number of semitones above C
   const scaleMap = new Map([
     ['C', 0],
@@ -109,7 +119,7 @@ function addScaleDropdownOptions() {
     ['B', 11]
   ]);
 
-  const dropdown = document.getElementById("scale-select")
+  const dropdown = document.getElementById("scale-root-select")
   scaleMap.forEach((v, k) => {
     const option = document.createElement("option");
     option.value = v;
@@ -118,5 +128,17 @@ function addScaleDropdownOptions() {
   })
 }
 
+function addScaleTypeDropdownOptions() {
+  const dropdown = document.getElementById("scale-type-select")
+  
+  for (let i = 0; i < 2; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = scaleNames.get(i);
+    dropdown.appendChild(option)
+  }
+}
+
 addKeys();
-addScaleDropdownOptions();
+addScaleRootDropdownOptions();
+addScaleTypeDropdownOptions();
