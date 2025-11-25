@@ -1,27 +1,17 @@
+import { majorScaleChords } from "./chords.js";
+
 const ctxt = new AudioContext();
 
 // MODEL
-const C_frequency = 523.25
+const C_frequency = 261.63
 
 let scale_base_freq = C_frequency
-
-const majorScale = [0, 2, 4, 5, 7, 9, 11]
-
-const chordsInMajorScale = [
-  [4, 7],
-  [3, 7],
-  [3, 7],
-  [4, 7],
-  [4, 7],
-  [3, 7],
-  [3, 6]
-]
 
 // CONTROLLER
 
 function playPiano(stepInScale) {
   const now = ctxt.currentTime;
-  const number_of_half_steps_above_tonic = majorScale[stepInScale];
+  const number_of_half_steps_above_tonic = majorScaleChords[stepInScale][0];
   const freq = scale_base_freq * (2 ** (number_of_half_steps_above_tonic / 12))
 
   const osc1 = ctxt.createOscillator();
@@ -35,10 +25,10 @@ function playPiano(stepInScale) {
   osc3.type = 'sine';
 
   osc1.frequency.value = freq;
-  const third_note_in_chord = chordsInMajorScale[stepInScale][0]
-  const fifth_note_in_chord = chordsInMajorScale[stepInScale][1]
-  osc2.frequency.value = freq * (2 ** (third_note_in_chord / 12));
-  osc3.frequency.value = freq * (2 ** (fifth_note_in_chord / 12));
+  const third_note_in_chord = majorScaleChords[stepInScale][1]
+  const fifth_note_in_chord = majorScaleChords[stepInScale][2]
+  osc2.frequency.value = scale_base_freq * (2 ** (third_note_in_chord / 12));
+  osc3.frequency.value = scale_base_freq * (2 ** (fifth_note_in_chord / 12));
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(6000, now);
@@ -104,7 +94,7 @@ function addScaleDropdownOptions() {
     ['Ab', 8],
     ['A', 9],
     ['A#', 10],
-    ['Bb', 10], 
+    ['Bb', 10],
     ['B', 11]
   ]);
 
