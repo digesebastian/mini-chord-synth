@@ -75,7 +75,7 @@ function playPiano(stepInScale) {
 }
 
 function changeScaleRoot(root) {
-  scale_base_freq = C_frequency * (2 ** (parseInt(root) / 12))
+  scale_base_freq = modulate(C_frequency, root)
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
@@ -131,7 +131,7 @@ function addScaleRootDropdownOptions() {
 function addScaleTypeDropdownOptions() {
   const dropdown = document.getElementById("scale-type-select")
   
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
     option.textContent = scaleNames.get(i);

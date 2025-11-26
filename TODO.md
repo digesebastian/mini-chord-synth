@@ -5,7 +5,7 @@ Keys:
 
 Scales:
 [x] Add a dropdown to change into the other major scales
-[] Add the option to change to a minor scale
+[x] Add the option to change to a minor scale
 
 Joystick:
 [] Make a interactive joystick in CSS/HTML

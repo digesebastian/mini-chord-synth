@@ -19,12 +19,24 @@ const minorScaleChords = [
     [10, 14, 17],
 ]
 
+const melodicMinorChords = [
+    [0, 3, 7],
+    [2, 5, 9],
+    [3, 7, 11],
+    [5, 9, 12],
+    [7, 11, 14],
+    [9, 12, 15],
+    [11, 14, 17],
+]
+
 export const scaleNames = new Map([
     [0, "Major"],
-    [1, "Minor"]
+    [1, "Minor"],
+    [2, "Melodic minor"]
 ])
 
 export const scales = new Map([
     [0, majorScaleChords],
-    [1, minorScaleChords]
+    [1, minorScaleChords],
+    [2, melodicMinorChords]
 ])
