@@ -1,40 +1,49 @@
+import { scales, scaleNames } from "./scales.js";
+
 const ctxt = new AudioContext();
 
-// At the moment hardcode to the C key
-const scaleBaseFreq = 523.25
+// MODEL
+const C_frequency = 261.63
 
-const majorScale = [0, 2, 4, 5, 7, 9, 11]
+let scale_base_freq = C_frequency
 
-const chordsInMajorScale = [
-  [4, 7],
-  [3, 7],
-  [3, 7],
-  [4, 7],
-  [4, 7],
-  [3, 7],
-  [3, 6]
-]
+let scale_type = 0;
+
+// CONTROLLER
+
+function modulate(baseFreq, semitones) {
+  return baseFreq * (2 ** (semitones / 12))
+}
+
+function getChordFreqs(stepInScale) {
+  const scale = scales.get(scale_type);
+
+  const chord = scale[stepInScale];
+  const chordRoot = modulate(scale_base_freq, chord[0])
+  const chordThird = modulate(scale_base_freq, chord[1])
+  const chordFifth = modulate(scale_base_freq, chord[2])
+
+  return [chordRoot, chordThird, chordFifth]
+}
 
 function playPiano(stepInScale) {
   const now = ctxt.currentTime;
-  const number_of_half_steps_above_tonic = majorScale[stepInScale];
-  const freq = scaleBaseFreq * (2**(number_of_half_steps_above_tonic/12))
+  const chordFreqs = getChordFreqs(stepInScale);
 
   const osc1 = ctxt.createOscillator();
   const osc2 = ctxt.createOscillator();
   const osc3 = ctxt.createOscillator();
-  const gain = ctxt.createGain();
-  const filter = ctxt.createBiquadFilter();
 
   osc1.type = 'sine';
   osc2.type = 'sine';
   osc3.type = 'sine';
 
-  osc1.frequency.value = freq;
-  const third_note_in_chord = chordsInMajorScale[stepInScale][0]
-  const fifth_note_in_chord = chordsInMajorScale[stepInScale][1]
-  osc2.frequency.value = freq * (2**(third_note_in_chord/12));
-  osc3.frequency.value = freq * (2**(fifth_note_in_chord/12));
+  osc1.frequency.value = chordFreqs[0];
+  osc2.frequency.value = chordFreqs[1];
+  osc3.frequency.value = chordFreqs[2];
+
+  const gain = ctxt.createGain();
+  const filter = ctxt.createBiquadFilter();
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(6000, now);
@@ -53,8 +62,8 @@ function playPiano(stepInScale) {
   g.setTargetAtTime(0.0001, now + attack + decay + 0.8, release);
 
   osc1.connect(gain);
-  osc2.connect(gain);  
-  osc3.connect(gain);  
+  osc2.connect(gain);
+  osc3.connect(gain);
   gain.connect(filter).connect(ctxt.destination);
 
   osc1.start(now);
@@ -64,6 +73,19 @@ function playPiano(stepInScale) {
   osc2.stop(now + 3);
   osc3.stop(now + 3);
 }
+
+function changeScaleRoot(root) {
+  scale_base_freq = modulate(C_frequency, root)
+}
+document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
+
+function changeScaleType(scaleType) {
+  scale_type = parseInt(scaleType);
+}
+document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
+
+
+// VIEW
 
 function addKeys() {
   const keys = document.getElementById("keys");
@@ -75,4 +97,48 @@ function addKeys() {
   }
 }
 
+function addScaleRootDropdownOptions() {
+  // scale names and number of semitones above C
+  const scaleMap = new Map([
+    ['C', 0],
+    ['C#', 1],
+    ['Db', 1],
+    ['D', 2],
+    ['D#', 3],
+    ['Eb', 3],
+    ['E', 4],
+    ['F', 5],
+    ['F#', 6],
+    ['Gb', 6],
+    ['G', 7],
+    ['G#', 8],
+    ['Ab', 8],
+    ['A', 9],
+    ['A#', 10],
+    ['Bb', 10],
+    ['B', 11]
+  ]);
+
+  const dropdown = document.getElementById("scale-root-select")
+  scaleMap.forEach((v, k) => {
+    const option = document.createElement("option");
+    option.value = v;
+    option.textContent = k;
+    dropdown.appendChild(option)
+  })
+}
+
+function addScaleTypeDropdownOptions() {
+  const dropdown = document.getElementById("scale-type-select")
+  
+  for (let i = 0; i < scales.size; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = scaleNames.get(i);
+    dropdown.appendChild(option)
+  }
+}
+
 addKeys();
+addScaleRootDropdownOptions();
+addScaleTypeDropdownOptions();

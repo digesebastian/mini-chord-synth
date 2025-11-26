@@ -3,6 +3,10 @@ Keys:
 [x] Create additional 6 keys playing remaining chords in C-scale
 [] Make the keyboard playable using the pc keyboard
 
+Scales:
+[x] Add a dropdown to change into the other major scales
+[x] Add the option to change to a minor scale
+
 Joystick:
 [] Make a interactive joystick in CSS/HTML
     [] First version can just "snap" the joystick to different positions
