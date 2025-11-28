@@ -97,6 +97,21 @@ function addKeys() {
   }
 }
 
+const keyBindings = ["a", "s", "d", "f", "g", "h", "j"];
+
+document.addEventListener("keydown", (event) => {
+  const key = event.key.toLowerCase();
+
+  const index = keyBindings.indexOf(key);
+  if (index !== -1) {
+    event.preventDefault()
+    const buttons = document.querySelectorAll(".chord-key");
+    playPiano(index)   // ⬅ this triggers click handler 
+  }
+});
+
+
+
 function addScaleRootDropdownOptions() {
   // scale names and number of semitones above C
   const scaleMap = new Map([
