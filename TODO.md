@@ -10,7 +10,7 @@ Scales:
 Joystick:
 [x] Make a interactive joystick in CSS/HTML
     [x] First version can just "snap" the joystick to different positions
-    [] Improve functionality for multiple keys pressed
+    [x] Improve functionality for multiple keys pressed
 [] Add chord extensions
 [] Map chord extensions to the different joystick positions
 

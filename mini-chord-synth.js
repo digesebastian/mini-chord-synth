@@ -1,5 +1,6 @@
 import { scales, scaleNames } from "./scales.js";
 import { JoyStick } from "./joystick.js"
+import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 
 // VARIABLES
 
@@ -88,6 +89,26 @@ function changeScaleType(scaleType) {
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
+function handleKeydown(e) {
+  if (e.repeat) {
+    // ignore keydown if it is fired from holding the key down
+    return
+  }
+  if (isKeyForJoystick(e.key)) {
+    const joyStickPos = handleJoystickKeydown(e.key);
+    joy.setPosition(joyStickPos[0], joyStickPos[1])
+  }
+}
+document.addEventListener("keydown", e => handleKeydown(e))
+
+function handleKeyup(e) {
+  if (isKeyForJoystick(e.key)) {
+    const joyStickPos = handleJoystickKeyup(e.key);
+    joy.setPosition(joyStickPos[0], joyStickPos[1])
+  }
+}
+document.addEventListener("keyup", e => handleKeyup(e))
+
 
 // VIEW
 
@@ -151,35 +172,6 @@ function addJoystick() {
     joystickDirection.value = stickData.cardinalDirection;
   });
 }
-
-const joystickKeyMap = new Map([
-  ['1', [50, 150]],
-  ['2', [100, 150]],
-  ['3', [150, 150]],
-  ['4', [50, 100]],
-  ['5', [100, 100]],
-  ['6', [150, 100]],
-  ['7', [50, 50]],
-  ['8', [100, 50]],
-  ['9', [150, 50]], 
-])
-function handleKeydown(event) {
-  const joyStickPos = joystickKeyMap.get(event.key); 
-
-  if (joyStickPos != undefined) {
-    joy.setPosition(joyStickPos[0], joyStickPos[1])
-  }
-}
-document.addEventListener("keydown", e => handleKeydown(e))
-function handleKeyup(event) {
-  const joyStickPos = joystickKeyMap.get(event.key); 
-
-  if (joyStickPos != undefined) {
-    joy.setPosition(100, 100)
-  }
-}
-document.addEventListener("keyup", e => handleKeyup(e))
-
 
 addKeys();
 addScaleRootDropdownOptions();
