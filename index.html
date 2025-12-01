@@ -2,7 +2,7 @@
   <meta charset="UTF-8" />
   <link rel="stylesheet" href="./mini-chord-synth.css" />
   <script type="module" src="./mini-chord-synth.js"></script>
-  <script type="text/javascript" src="https://github.com/bobboteck/JoyStick/releases/download/v2.0.0/joy.min.js"></script>
+  <script type="text/javascript" src="./joystick.js"></script>
 </head>
 
 <body>
@@ -19,6 +19,7 @@
   <div id="joy-div" class="joystick-box">
   </div>
   Direction:<input id="joystick-direction" type="text" /><br />
+  <button id="test" class="chord-key"></button>
 
 </body>
 
@@ -29,4 +30,5 @@ var joystickDirection = document.getElementById("joystick-direction");
 var joy = new JoyStick('joy-div', joyParams, function(stickData) {
   joystickDirection.value = stickData.cardinalDirection;
 });
+document.getElementById("test").addEventListener("click",() => joy.setPosition(75, 150))
 </script>
