@@ -91,7 +91,7 @@ document.getElementById("scale-type-select").addEventListener("change", (e) => c
 
 function handleKeydown(e) {
   if (e.repeat) {
-    // ignore keydown if it is fired from holding the key down
+    // ignore keydown if it is fired from holding down a key
     return
   }
   if (isKeyForJoystick(e.key)) {
@@ -164,12 +164,23 @@ function addScaleTypeDropdownOptions() {
   }
 }
 
+const extensionMap = new Map([
+  ['C', 'None'],
+  ['N', 'TODO maj/min'],
+  ['NE', 'TODO 7th'],
+  ['E', 'TODO maj/min 7th'],
+  ['SE', 'TODO maj/min 9th'],
+  ['S', 'TODO sus4'],
+  ['SW', 'TODO sus2'],
+  ['W', 'TODO dim'],
+  ['NW', 'TODO aug'],
+])
 function addJoystick() {
   const joyParams = {"autoReturnToCenter": true}
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function(stickData) {
-    joystickDirection.value = stickData.cardinalDirection;
+    joystickDirection.value = extensionMap.get(stickData.cardinalDirection);
   });
 }
 
