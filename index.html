@@ -19,16 +19,4 @@
   <div id="joy-div" class="joystick-box">
   </div>
   Direction:<input id="joystick-direction" type="text" /><br />
-  <button id="test" class="chord-key"></button>
-
 </body>
-
-<script type="text/javascript">
-const joyParams = {"autoReturnToCenter": true}
-var joystickDirection = document.getElementById("joystick-direction");
-
-var joy = new JoyStick('joy-div', joyParams, function(stickData) {
-  joystickDirection.value = stickData.cardinalDirection;
-});
-document.getElementById("test").addEventListener("click",() => joy.setPosition(75, 150))
-</script>
