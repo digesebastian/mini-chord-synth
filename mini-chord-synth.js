@@ -1,6 +1,11 @@
 import { scales, scaleNames } from "./scales.js";
+import { JoyStick } from "./joystick.js"
+import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
+
+// VARIABLES
 
 const ctxt = new AudioContext();
+let joy;
 
 // MODEL
 const C_frequency = 261.63
@@ -84,6 +89,26 @@ function changeScaleType(scaleType) {
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
+function handleKeydown(e) {
+  if (e.repeat) {
+    // ignore keydown if it is fired from holding down a key
+    return
+  }
+  if (isKeyForJoystick(e.key)) {
+    const joyStickPos = handleJoystickKeydown(e.key);
+    joy.setPosition(joyStickPos[0], joyStickPos[1])
+  }
+}
+document.addEventListener("keydown", e => handleKeydown(e))
+
+function handleKeyup(e) {
+  if (isKeyForJoystick(e.key)) {
+    const joyStickPos = handleJoystickKeyup(e.key);
+    joy.setPosition(joyStickPos[0], joyStickPos[1])
+  }
+}
+document.addEventListener("keyup", e => handleKeyup(e))
+
 
 // VIEW
 
@@ -139,6 +164,27 @@ function addScaleTypeDropdownOptions() {
   }
 }
 
+const extensionMap = new Map([
+  ['C', 'None'],
+  ['N', 'TODO maj/min'],
+  ['NE', 'TODO 7th'],
+  ['E', 'TODO maj/min 7th'],
+  ['SE', 'TODO maj/min 9th'],
+  ['S', 'TODO sus4'],
+  ['SW', 'TODO sus2'],
+  ['W', 'TODO dim'],
+  ['NW', 'TODO aug'],
+])
+function addJoystick() {
+  const joyParams = {"autoReturnToCenter": true}
+  var joystickDirection = document.getElementById("joystick-direction");
+  var joystickDivId = 'joy-div';
+  joy = new JoyStick(joystickDivId, joyParams, function(stickData) {
+    joystickDirection.value = extensionMap.get(stickData.cardinalDirection);
+  });
+}
+
 addKeys();
 addScaleRootDropdownOptions();
 addScaleTypeDropdownOptions();
+addJoystick();
