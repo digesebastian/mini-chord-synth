@@ -31,21 +31,21 @@ function getChordFreqs(stepInScale) {
   return [chordRoot, chordThird, chordFifth]
 }
 
-function playPiano(stepInScale) {
+function play(stepInScale) {
+  const chordFrequencies = getChordFreqs(stepInScale)
+  playPiano(chordFrequencies);
+}
+
+function playPiano(frequencies) {
   const now = ctxt.currentTime;
-  const chordFreqs = getChordFreqs(stepInScale);
 
-  const osc1 = ctxt.createOscillator();
-  const osc2 = ctxt.createOscillator();
-  const osc3 = ctxt.createOscillator();
-
-  osc1.type = 'sine';
-  osc2.type = 'sine';
-  osc3.type = 'sine';
-
-  osc1.frequency.value = chordFreqs[0];
-  osc2.frequency.value = chordFreqs[1];
-  osc3.frequency.value = chordFreqs[2];
+  const oscs = [];
+  frequencies.forEach(f => {
+    const osc = ctxt.createOscillator();
+    osc.type = 'sine'
+    osc.frequency.value = f
+    oscs.push(osc)
+  })
 
   const gain = ctxt.createGain();
   const filter = ctxt.createBiquadFilter();
@@ -66,17 +66,11 @@ function playPiano(stepInScale) {
   g.linearRampToValueAtTime(velocity * sustain, now + attack + decay);
   g.setTargetAtTime(0.0001, now + attack + decay + 0.8, release);
 
-  osc1.connect(gain);
-  osc2.connect(gain);
-  osc3.connect(gain);
+  oscs.forEach(o => o.connect(gain))
   gain.connect(filter).connect(ctxt.destination);
-
-  osc1.start(now);
-  osc2.start(now);
-  osc3.start(now);
-  osc1.stop(now + 3);
-  osc2.stop(now + 3);
-  osc3.stop(now + 3);
+  
+  oscs.forEach(o => o.start(now))
+  oscs.forEach(o => o.stop(now + 3))
 }
 
 function changeScaleRoot(root) {
@@ -117,7 +111,7 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.addEventListener("click", () => playPiano(i))
+    k.addEventListener("click", () => play(i))
     keys.appendChild(k);
   }
 }
