@@ -1,4 +1,5 @@
-import { scales, scaleNames, Chord } from "./scales.js";
+import { scales, scaleNames } from "./scales.js";
+import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 
@@ -8,9 +9,10 @@ const ctxt = new AudioContext();
 let joy;
 
 // MODEL
-const C_frequency = 261.63
 
-let scale_base_freq = C_frequency
+const baseFreq = 261.63 // C4
+
+let scaleSemitones = 0;
 
 let scale_type = 0;
 
@@ -18,7 +20,7 @@ let chord_transform = 'None';
 
 // CONTROLLER
 
-function modulate(baseFreq, semitones) {
+function modulate(semitones) {
   return baseFreq * (2 ** (semitones / 12))
 }
 
@@ -29,10 +31,13 @@ function getChordFreqs(scaleDegree) {
   
   const transformedChord = Chord.transformChord(chord, chord_transform);
   
-  const chordSemitones = transformedChord.getSemitones();
-  const chordRoot = modulate(scale_base_freq, chordSemitones[0])
-  const chordThird = modulate(scale_base_freq, chordSemitones[1])
-  const chordFifth = modulate(scale_base_freq, chordSemitones[2])
+  const chordSemitones = transformedChord.getSemitones()
+    .map(s => (s + scaleSemitones)) // adjust to current scale
+    .map(s => s % 12) // fit all notes in one octave
+
+  const chordRoot = modulate(chordSemitones[0])
+  const chordThird = modulate(chordSemitones[1])
+  const chordFifth = modulate(chordSemitones[2])
 
   return [chordRoot, chordThird, chordFifth]
 }
@@ -80,7 +85,7 @@ function playPiano(frequencies) {
 }
 
 function changeScaleRoot(root) {
-  scale_base_freq = modulate(C_frequency, root)
+  scaleSemitones = parseInt(root);
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 

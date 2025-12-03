@@ -14,9 +14,9 @@
    [x] Improve functionality for multiple keys pressed
 
 ### Chords
-[] Add chord extensions  
-    [] Map chord extensions to the different joystick positions  
-[] Fit all chords of scale within one octave   
+[] Add 1 chord extension  
+    [] Add remaining chord extensions  
+[x] Fit all chords of scale within one octave  
 
 ### Sound
 [x] Make some default sound  
