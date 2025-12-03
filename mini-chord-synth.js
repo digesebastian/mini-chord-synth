@@ -23,10 +23,10 @@ function modulate(baseFreq, semitones) {
 function getChordFreqs(stepInScale) {
   const scale = scales.get(scale_type);
 
-  const chord = scale[stepInScale];
-  const chordRoot = modulate(scale_base_freq, chord[0])
-  const chordThird = modulate(scale_base_freq, chord[1])
-  const chordFifth = modulate(scale_base_freq, chord[2])
+  const chordSemitones = scale[stepInScale].getSemitones();
+  const chordRoot = modulate(scale_base_freq, chordSemitones[0])
+  const chordThird = modulate(scale_base_freq, chordSemitones[1])
+  const chordFifth = modulate(scale_base_freq, chordSemitones[2])
 
   return [chordRoot, chordThird, chordFifth]
 }
