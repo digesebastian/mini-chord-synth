@@ -1,4 +1,4 @@
-import { scales, scaleNames } from "./scales.js";
+import { scales, scaleNames, Chord } from "./scales.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 
@@ -14,16 +14,22 @@ let scale_base_freq = C_frequency
 
 let scale_type = 0;
 
+let chord_transform = 'None';
+
 // CONTROLLER
 
 function modulate(baseFreq, semitones) {
   return baseFreq * (2 ** (semitones / 12))
 }
 
-function getChordFreqs(stepInScale) {
+function getChordFreqs(scaleDegree) {
   const scale = scales.get(scale_type);
 
-  const chordSemitones = scale[stepInScale].getSemitones();
+  const chord = scale[scaleDegree];
+  
+  const transformedChord = Chord.transformChord(chord, chord_transform);
+  
+  const chordSemitones = transformedChord.getSemitones();
   const chordRoot = modulate(scale_base_freq, chordSemitones[0])
   const chordThird = modulate(scale_base_freq, chordSemitones[1])
   const chordFifth = modulate(scale_base_freq, chordSemitones[2])
@@ -31,8 +37,8 @@ function getChordFreqs(stepInScale) {
   return [chordRoot, chordThird, chordFifth]
 }
 
-function play(stepInScale) {
-  const chordFrequencies = getChordFreqs(stepInScale)
+function play(scaleDegree) {
+  const chordFrequencies = getChordFreqs(scaleDegree)
   playPiano(chordFrequencies);
 }
 
@@ -181,23 +187,24 @@ function addScaleTypeDropdownOptions() {
   }
 }
 
-const extensionMap = new Map([
+const transformationMap = new Map([
   ['C', 'None'],
   ['N', 'TODO maj/min'],
   ['NE', 'TODO 7th'],
   ['E', 'TODO maj/min 7th'],
   ['SE', 'TODO maj/min 9th'],
   ['S', 'TODO sus4'],
-  ['SW', 'TODO sus2'],
+  ['SW', 'sus2'],
   ['W', 'TODO dim'],
   ['NW', 'TODO aug'],
 ])
 function addJoystick() {
-  const joyParams = {"autoReturnToCenter": true}
+  const joyParams = {"autoReturnToCenter": false}
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function(stickData) {
-    joystickDirection.value = extensionMap.get(stickData.cardinalDirection);
+    chord_transform = transformationMap.get(stickData.cardinalDirection);     
+    joystickDirection.value = chord_transform;
   });
 }
 
