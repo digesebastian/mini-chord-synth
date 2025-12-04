@@ -3,3 +3,8 @@
     width: 200px;
     border: solid 1px black
 }
+
+.chord-key.pressed {
+  background-color: #ffda75;
+  transform: scale(0.96);
+}

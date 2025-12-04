@@ -106,9 +106,17 @@ document.addEventListener("keydown", (event) => {
   if (index !== -1) {
     event.preventDefault()
     const buttons = document.querySelectorAll(".chord-key");
-    playPiano(index)   // ⬅ this triggers click handler 
+    const btn = buttons[index];
+
+    // pressed görünümü
+    btn.classList.add("pressed");
+    setTimeout(() => btn.classList.remove("pressed"), 150);
+
+    // sesi çal
+    btn.click();  
   }
 });
+
 
 
 
