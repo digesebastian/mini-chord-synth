@@ -8,8 +8,9 @@ Scales:
 [x] Add the option to change to a minor scale
 
 Joystick:
-[] Make a interactive joystick in CSS/HTML
-    [] First version can just "snap" the joystick to different positions
+[x] Make a interactive joystick in CSS/HTML
+    [x] First version can just "snap" the joystick to different positions
+    [x] Improve functionality for multiple keys pressed
 [] Add chord extensions
 [] Map chord extensions to the different joystick positions
 
