@@ -1,32 +1,33 @@
-// all the chords of the major scale expressed in terms of semitones about the root of the scale
+import { Chord } from './chord'
+
 const majorScaleChords = [
-    [0, 4, 7],
-    [2, 5, 9],
-    [4, 7, 11],
-    [5, 9, 12],
-    [7, 11, 14],
-    [9, 12, 16],
-    [11, 14, 17],
+    Chord.createChord(0, 'maj'),
+    Chord.createChord(2, 'min'),
+    Chord.createChord(4, 'min'),
+    Chord.createChord(5, 'maj'),
+    Chord.createChord(7, 'maj'),
+    Chord.createChord(9, 'min'),
+    Chord.createChord(11, 'dim')
 ]
 
 const minorScaleChords = [
-    [0, 3, 7],
-    [2, 5, 8],
-    [3, 7, 10],
-    [5, 8, 12],
-    [7, 10, 14],
-    [8, 12, 15],
-    [10, 14, 17],
+    Chord.createChord(0, 'min'),
+    Chord.createChord(2, 'dim'),
+    Chord.createChord(3, 'maj'),
+    Chord.createChord(5, 'min'),
+    Chord.createChord(7, 'min'),
+    Chord.createChord(8, 'maj'),
+    Chord.createChord(10, 'maj')
 ]
 
 const melodicMinorChords = [
-    [0, 3, 7],
-    [2, 5, 9],
-    [3, 7, 11],
-    [5, 9, 12],
-    [7, 11, 14],
-    [9, 12, 15],
-    [11, 14, 17],
+    Chord.createChord(0, 'min'),
+    Chord.createChord(2, 'min'),
+    Chord.createChord(3, 'aug'),
+    Chord.createChord(5, 'maj'),
+    Chord.createChord(7, 'maj'),
+    Chord.createChord(9, 'dim'),
+    Chord.createChord(11, 'dim')
 ]
 
 export const scaleNames = new Map([
