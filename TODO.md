@@ -14,7 +14,7 @@
    [x] Improve functionality for multiple keys pressed
 
 ### Chords
-[] Add 1 chord extension  
+[x] Add 1 chord extension  
     [] Add remaining chord extensions  
 [x] Fit all chords of scale within one octave  
 
@@ -30,5 +30,7 @@
 ## Nice to have:
 
 [] Keyboard visualizer  
-    [] Functionality to pick range where chords are played 
+    [] Functionality to pick range where chords are played
+
+[] Ability to change key bindings
 

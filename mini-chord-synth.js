@@ -94,6 +94,24 @@ function changeScaleType(scaleType) {
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
+const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
+function handleChordKey(e) {
+  const key = e.key.toLowerCase();
+
+  const index = chordKeys.indexOf(key);
+  if (index !== -1) {
+    e.preventDefault()
+    const buttons = document.querySelectorAll(".chord-key");
+    const btn = buttons[index];
+    // pressed görünümü
+    btn.classList.add("pressed");
+    setTimeout(() => btn.classList.remove("pressed"), 150);
+
+    // sesi çal
+    btn.click();  
+  }
+}
+
 function handleKeydown(e) {
   if (e.repeat) {
     // ignore keydown if it is fired from holding down a key
@@ -102,6 +120,8 @@ function handleKeydown(e) {
   if (isKeyForJoystick(e.key)) {
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
+  } else {
+    handleChordKey(e)
   }
 }
 document.addEventListener("keydown", e => handleKeydown(e))
@@ -126,29 +146,6 @@ function addKeys() {
     keys.appendChild(k);
   }
 }
-
-const keyBindings = ["a", "s", "d", "f", "g", "h", "j"];
-
-document.addEventListener("keydown", (event) => {
-  const key = event.key.toLowerCase();
-
-  const index = keyBindings.indexOf(key);
-  if (index !== -1) {
-    event.preventDefault()
-    const buttons = document.querySelectorAll(".chord-key");
-    const btn = buttons[index];
-
-    // pressed görünümü
-    btn.classList.add("pressed");
-    setTimeout(() => btn.classList.remove("pressed"), 150);
-
-    // sesi çal
-    btn.click();  
-  }
-});
-
-
-
 
 function addScaleRootDropdownOptions() {
   // scale names and number of semitones above C
