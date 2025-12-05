@@ -1,7 +1,7 @@
 Keys:
 [x] Create first key playing a C-major chord
 [x] Create additional 6 keys playing remaining chords in C-scale
-[] Make the keyboard playable using the pc keyboard
+[x] Make the keyboard playable using the pc keyboard
 
 Scales:
 [x] Add a dropdown to change into the other major scales

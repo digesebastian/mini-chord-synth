@@ -122,6 +122,29 @@ function addKeys() {
   }
 }
 
+const keyBindings = ["a", "s", "d", "f", "g", "h", "j"];
+
+document.addEventListener("keydown", (event) => {
+  const key = event.key.toLowerCase();
+
+  const index = keyBindings.indexOf(key);
+  if (index !== -1) {
+    event.preventDefault()
+    const buttons = document.querySelectorAll(".chord-key");
+    const btn = buttons[index];
+
+    // pressed görünümü
+    btn.classList.add("pressed");
+    setTimeout(() => btn.classList.remove("pressed"), 150);
+
+    // sesi çal
+    btn.click();  
+  }
+});
+
+
+
+
 function addScaleRootDropdownOptions() {
   // scale names and number of semitones above C
   const scaleMap = new Map([
