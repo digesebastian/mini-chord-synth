@@ -3,6 +3,7 @@ import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import * as Tone from "tone";
+import { log } from "tone/build/esm/core/util/Debug.js";
 
 // VARIABLES
 
@@ -29,9 +30,9 @@ function getChord(scaleDegree) {
   const scale = scales.get(scaleType);
 
   const chord = scale[scaleDegree];
-  
+
   const transformedChord = Chord.transformChord(chord, chordTransform);
-  
+
   const chordSemitones = transformedChord.getSemitones()
     .map(s => (s + scaleSemitones)) // adjust to current scale
     .map(s => s % 12) // fit all notes in one octave
@@ -48,8 +49,17 @@ function play(scaleDegree) {
 }
 
 function playSines(nodes) {
-  var synth = new Tone.PolySynth().toDestination();
-  synth.triggerAttackRelease(nodes, "4n");
+  const bass = nodes[0].replace(/4/g, '3');
+  const withBass = [bass].concat(nodes)
+  var synth = new Tone.PolySynth(Tone.Synth, {
+    envelope: {
+      attack: 0.1,
+      decay: 0.5,
+      sustain: 0.4,
+      release: 2
+    }
+  }).toDestination();
+  synth.triggerAttackRelease(withBass, "4n");
 }
 
 function playPluck(nodes) {
@@ -83,7 +93,7 @@ function handleChordKey(e) {
     setTimeout(() => btn.classList.remove("pressed"), 150);
 
     // sesi çal
-    btn.click();  
+    btn.click();
   }
 }
 
@@ -155,7 +165,7 @@ function addScaleRootDropdownOptions() {
 
 function addScaleTypeDropdownOptions() {
   const dropdown = document.getElementById("scale-type-select")
-  
+
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
@@ -176,11 +186,11 @@ const transformationMap = new Map([
   ['NW', 'aug'],
 ])
 function addJoystick() {
-  const joyParams = {"autoReturnToCenter": false}
+  const joyParams = { "autoReturnToCenter": false }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
-  joy = new JoyStick(joystickDivId, joyParams, function(stickData) {
-    chordTransform = transformationMap.get(stickData.cardinalDirection);     
+  joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
+    chordTransform = transformationMap.get(stickData.cardinalDirection);
     joystickDirection.value = chordTransform;
   });
 }
