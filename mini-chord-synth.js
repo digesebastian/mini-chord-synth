@@ -2,86 +2,81 @@ import { scales, scaleNames } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
+import * as Tone from "tone";
 
 // VARIABLES
 
-const ctxt = new AudioContext();
 let joy;
+
+let synth;
 
 // MODEL
 
-const baseFreq = 261.63 // C4
+const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 let scaleSemitones = 0;
 
-let scale_type = 0;
+let scaleType = 0;
 
-let chord_transform = 'None';
+let chordTransform = 'None';
+
+let isInitialized = false;
 
 // CONTROLLER
 
-function modulate(semitones) {
-  return baseFreq * (2 ** (semitones / 12))
+function initializeAudioContext() {
+  const gain = new Tone.Gain(0.8).toDestination()
+  const compressor = new Tone.Compressor({
+    threshold: -12,
+    ratio: 4,
+    attack: 0.1,
+    release: 0.25
+  }).connect(gain)
+  synth = new Tone.PolySynth(Tone.Synth, {
+    envelope: {
+      attack: 0.1,
+      decay: 0.5,
+      sustain: 0.4,
+      release: 3
+    }
+  }).connect(compressor);
+}
+initializeAudioContext()
+
+function getNodeName(semitones) {
+  return NODE_NAMES[semitones] + '4'
 }
 
-function getChordFreqs(scaleDegree) {
-  const scale = scales.get(scale_type);
+function getChord(scaleDegree) {
+  const scale = scales.get(scaleType);
 
   const chord = scale[scaleDegree];
-  
-  const transformedChord = Chord.transformChord(chord, chord_transform);
-  
+
+  const transformedChord = Chord.transformChord(chord, chordTransform);
+
   const chordSemitones = transformedChord.getSemitones()
     .map(s => (s + scaleSemitones)) // adjust to current scale
     .map(s => s % 12) // fit all notes in one octave
 
-  const chordRoot = modulate(chordSemitones[0])
-  const chordThird = modulate(chordSemitones[1])
-  const chordFifth = modulate(chordSemitones[2])
+  const chordRoot = getNodeName(chordSemitones[0])
+  const chordThird = getNodeName(chordSemitones[1])
+  const chordFifth = getNodeName(chordSemitones[2])
 
   return [chordRoot, chordThird, chordFifth]
 }
 
-function play(scaleDegree) {
-  const chordFrequencies = getChordFreqs(scaleDegree)
-  playPiano(chordFrequencies);
+async function play(scaleDegree) {
+  if (!isInitialized) {
+    await Tone.start()
+    isInitialized = true;
+  }
+  playSines(getChord(scaleDegree));
 }
 
-function playPiano(frequencies) {
-  const now = ctxt.currentTime;
-
-  const oscs = [];
-  frequencies.forEach(f => {
-    const osc = ctxt.createOscillator();
-    osc.type = 'sine'
-    osc.frequency.value = f
-    oscs.push(osc)
-  })
-
-  const gain = ctxt.createGain();
-  const filter = ctxt.createBiquadFilter();
-
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(6000, now);
-  filter.Q.value = 0.7;
-
-  const attack = 0.002;
-  const decay = 0.25;
-  const sustain = 0.2;
-  const release = 0.4;
-
-  const g = gain.gain;
-  const velocity = 0.8;
-  g.setValueAtTime(0, now);
-  g.linearRampToValueAtTime(velocity, now + attack);
-  g.linearRampToValueAtTime(velocity * sustain, now + attack + decay);
-  g.setTargetAtTime(0.0001, now + attack + decay + 0.8, release);
-
-  oscs.forEach(o => o.connect(gain))
-  gain.connect(filter).connect(ctxt.destination);
-  
-  oscs.forEach(o => o.start(now))
-  oscs.forEach(o => o.stop(now + 3))
+function playSines(nodes) {
+  const bass = nodes[0].replace(/4/g, '3');
+  const withBass = [bass].concat(nodes)
+  synth.triggerAttackRelease(withBass, "4n");
 }
 
 function changeScaleRoot(root) {
@@ -90,7 +85,7 @@ function changeScaleRoot(root) {
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(scaleType) {
-  scale_type = parseInt(scaleType);
+  scaleType = parseInt(scaleType);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
@@ -108,23 +103,27 @@ function handleChordKey(e) {
     setTimeout(() => btn.classList.remove("pressed"), 150);
 
     // sesi çal
-    btn.click();  
+    btn.click();
   }
 }
 
-function handleKeydown(e) {
+async function handleKeydown(e) {
+  if (!isInitialized) {
+    await Tone.start()
+    isInitialized = true;
+  }
   if (e.repeat) {
-    // ignore keydown if it is fired from holding down a key
-    return
+    return // ignore keydown if it is fired from holding down a key
   }
   if (isKeyForJoystick(e.key)) {
+    e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
   } else {
     handleChordKey(e)
   }
 }
-document.addEventListener("keydown", e => handleKeydown(e))
+document.addEventListener("keydown", async (e) => await handleKeydown(e))
 
 function handleKeyup(e) {
   if (isKeyForJoystick(e.key)) {
@@ -142,7 +141,7 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.addEventListener("click", () => play(i))
+    k.addEventListener("click", async () => await play(i))
     keys.appendChild(k);
   }
 }
@@ -180,7 +179,7 @@ function addScaleRootDropdownOptions() {
 
 function addScaleTypeDropdownOptions() {
   const dropdown = document.getElementById("scale-type-select")
-  
+
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
@@ -201,12 +200,12 @@ const transformationMap = new Map([
   ['NW', 'aug'],
 ])
 function addJoystick() {
-  const joyParams = {"autoReturnToCenter": false}
+  const joyParams = { "autoReturnToCenter": false }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
-  joy = new JoyStick(joystickDivId, joyParams, function(stickData) {
-    chord_transform = transformationMap.get(stickData.cardinalDirection);     
-    joystickDirection.value = chord_transform;
+  joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
+    chordTransform = transformationMap.get(stickData.cardinalDirection);
+    joystickDirection.value = chordTransform;
   });
 }
 
