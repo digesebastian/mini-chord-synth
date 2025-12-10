@@ -3,11 +3,12 @@ import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import * as Tone from "tone";
-import { log } from "tone/build/esm/core/util/Debug.js";
 
 // VARIABLES
 
 let joy;
+
+let synth;
 
 // MODEL
 
@@ -19,8 +20,28 @@ let scaleType = 0;
 
 let chordTransform = 'None';
 
+let isInitialized = false;
 
 // CONTROLLER
+
+function initializeAudioContext() {
+  const gain = new Tone.Gain(0.8).toDestination()
+  const compressor = new Tone.Compressor({
+    threshold: -12,
+    ratio: 4,
+    attack: 0.1,
+    release: 0.25
+  }).connect(gain)
+  synth = new Tone.PolySynth(Tone.Synth, {
+    envelope: {
+      attack: 0.1,
+      decay: 0.5,
+      sustain: 0.4,
+      release: 3
+    }
+  }).connect(compressor);
+}
+initializeAudioContext()
 
 function getNodeName(semitones) {
   return NODE_NAMES[semitones] + '4'
@@ -44,21 +65,17 @@ function getChord(scaleDegree) {
   return [chordRoot, chordThird, chordFifth]
 }
 
-function play(scaleDegree) {
+async function play(scaleDegree) {
+  if (!isInitialized) {
+    await Tone.start()
+    isInitialized = true;
+  }
   playSines(getChord(scaleDegree));
 }
 
 function playSines(nodes) {
   const bass = nodes[0].replace(/4/g, '3');
   const withBass = [bass].concat(nodes)
-  var synth = new Tone.PolySynth(Tone.Synth, {
-    envelope: {
-      attack: 0.1,
-      decay: 0.5,
-      sustain: 0.4,
-      release: 2
-    }
-  }).toDestination();
   synth.triggerAttackRelease(withBass, "4n");
 }
 
@@ -90,7 +107,11 @@ function handleChordKey(e) {
   }
 }
 
-function handleKeydown(e) {
+async function handleKeydown(e) {
+  if (!isInitialized) {
+    await Tone.start()
+    isInitialized = true;
+  }
   if (e.repeat) {
     // ignore keydown if it is fired from holding down a key
     return
@@ -102,7 +123,7 @@ function handleKeydown(e) {
     handleChordKey(e)
   }
 }
-document.addEventListener("keydown", e => handleKeydown(e))
+document.addEventListener("keydown", async (e) => await handleKeydown(e))
 
 function handleKeyup(e) {
   if (isKeyForJoystick(e.key)) {
@@ -120,7 +141,7 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.addEventListener("click", () => play(i))
+    k.addEventListener("click", async () => await play(i))
     keys.appendChild(k);
   }
 }
