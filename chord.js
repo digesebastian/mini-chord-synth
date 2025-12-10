@@ -21,12 +21,12 @@ export class Chord {
 
 
             case 'maj/min':
-            // maj ise → min
+            // if maj → min
                 if (newChord.chordType === 'maj') {
                     newChord.third -= 1
                     newChord.chordType = 'min'
             }
-            // min ise → maj
+            // if min → maj
                 else if (newChord.chordType === 'min') {
                     newChord.third += 1
                     newChord.chordType = 'maj'
@@ -34,12 +34,12 @@ export class Chord {
                 break;
             
             case '7th':
-                // dominant 7 (basit 7'li)
+                // dominant 7 
                 newChord.seventh = newChord.root + 10
                 break;    
 
             case 'maj/min 7th':
-                // önce maj↔min dönüşümü
+                // first maj↔min 
                 if (newChord.chordType === 'maj') {
                     newChord.third -= 1
                     newChord.chordType = 'min'
@@ -47,12 +47,12 @@ export class Chord {
                     newChord.third += 1
                     newChord.chordType = 'maj'
             }
-                // basit maj7 ekleme (root + 11)
+                // than maj7 ekleme (root + 11)
                 newChord.seventh = newChord.root + 11
                 break;
 
             case 'maj/min 9th':
-                // önce maj↔min dönüşümü
+                // first maj↔min 
                 if (newChord.chordType === 'maj') {
                     newChord.third -= 1
                     newChord.chordType = 'min'
@@ -60,12 +60,12 @@ export class Chord {
                     newChord.third += 1
                     newChord.chordType = 'maj'
             }
-                // 9 ses ekleme (root + 14)
+                
                 newChord.ninth = newChord.root + 14
                 break;
 
             case 'sus4':
-                // üçüncü ses yerine dördüncü derece
+                
                 newChord.third = newChord.root + 5
                 break;
 
@@ -74,14 +74,14 @@ export class Chord {
                 break;
 
             case 'dim':
-                // direkt dim akora dönüştürme
+                // transforming to dim chord
                 newChord.third = newChord.root + 3
                 newChord.fifth = newChord.root + 6
                 newChord.chordType = 'dim'
                 break;
             
             case 'aug':
-                // direkt augmented akora dönüştürme
+                // transforming to dim chord
                 newChord.third = newChord.root + 4
                 newChord.fifth = newChord.root + 8
                 newChord.chordType = 'aug'
