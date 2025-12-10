@@ -113,10 +113,10 @@ async function handleKeydown(e) {
     isInitialized = true;
   }
   if (e.repeat) {
-    // ignore keydown if it is fired from holding down a key
-    return
+    return // ignore keydown if it is fired from holding down a key
   }
   if (isKeyForJoystick(e.key)) {
+    e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
   } else {
