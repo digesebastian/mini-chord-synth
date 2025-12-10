@@ -19,8 +19,8 @@
 [x] Fit all chords of scale within one octave  
 
 ### Sound
-[x] Make some default sound  
-[] Improve the sound  
+[x] Make some default sound 
+[x] Improve the sound  
 [] Make it possible to choose different sounds  
 
 ### Design

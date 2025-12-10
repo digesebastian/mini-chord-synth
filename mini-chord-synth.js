@@ -27,17 +27,17 @@ let isInitialized = false;
 function initializeAudioContext() {
   const gain = new Tone.Gain(0.8).toDestination()
   const compressor = new Tone.Compressor({
-    threshold: -12,
-    ratio: 4,
+    threshold: -18,
+    ratio: 3,
     attack: 0.1,
-    release: 0.25
+    release: 0.5
   }).connect(gain)
   synth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
-      attack: 0.1,
-      decay: 0.5,
-      sustain: 0.4,
-      release: 3
+      attack: 0.2,
+      decay: 0.2,
+      sustain: 0.5,
+      release: 0.5
     }
   }).connect(compressor);
 }
