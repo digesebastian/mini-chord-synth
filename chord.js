@@ -18,9 +18,77 @@ export class Chord {
         switch (transform) {
             case 'None':
                 break;
+
+
+            case 'maj/min':
+            // maj ise → min
+                if (newChord.chordType === 'maj') {
+                    newChord.third -= 1
+                    newChord.chordType = 'min'
+            }
+            // min ise → maj
+                else if (newChord.chordType === 'min') {
+                    newChord.third += 1
+                    newChord.chordType = 'maj'
+            }
+                break;
+            
+            case '7th':
+                // dominant 7 (basit 7'li)
+                newChord.seventh = newChord.root + 10
+                break;    
+
+            case 'maj/min 7th':
+                // önce maj↔min dönüşümü
+                if (newChord.chordType === 'maj') {
+                    newChord.third -= 1
+                    newChord.chordType = 'min'
+            }   else if (newChord.chordType === 'min') {
+                    newChord.third += 1
+                    newChord.chordType = 'maj'
+            }
+                // basit maj7 ekleme (root + 11)
+                newChord.seventh = newChord.root + 11
+                break;
+
+            case 'maj/min 9th':
+                // önce maj↔min dönüşümü
+                if (newChord.chordType === 'maj') {
+                    newChord.third -= 1
+                    newChord.chordType = 'min'
+            }   else if (newChord.chordType === 'min') {
+                    newChord.third += 1
+                    newChord.chordType = 'maj'
+            }
+                // 9 ses ekleme (root + 14)
+                newChord.ninth = newChord.root + 14
+                break;
+
+            case 'sus4':
+                // üçüncü ses yerine dördüncü derece
+                newChord.third = newChord.root + 5
+                break;
+
             case 'sus2': 
                 newChord.third = newChord.root + 2;
                 break;
+
+            case 'dim':
+                // direkt dim akora dönüştürme
+                newChord.third = newChord.root + 3
+                newChord.fifth = newChord.root + 6
+                newChord.chordType = 'dim'
+                break;
+            
+            case 'aug':
+                // direkt augmented akora dönüştürme
+                newChord.third = newChord.root + 4
+                newChord.fifth = newChord.root + 8
+                newChord.chordType = 'aug'
+                break;
+
+            
+
             default: 
                 console.log("Not implemented")
         }

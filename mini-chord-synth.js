@@ -191,14 +191,14 @@ function addScaleTypeDropdownOptions() {
 
 const transformationMap = new Map([
   ['C', 'None'],
-  ['N', 'TODO maj/min'],
-  ['NE', 'TODO 7th'],
-  ['E', 'TODO maj/min 7th'],
-  ['SE', 'TODO maj/min 9th'],
-  ['S', 'TODO sus4'],
+  ['N', 'maj/min'],
+  ['NE', '7th'],
+  ['E', 'maj/min 7th'],
+  ['SE', 'maj/min 9th'],
+  ['S', 'sus4'],
   ['SW', 'sus2'],
-  ['W', 'TODO dim'],
-  ['NW', 'TODO aug'],
+  ['W', 'dim'],
+  ['NW', 'aug'],
 ])
 function addJoystick() {
   const joyParams = {"autoReturnToCenter": false}
