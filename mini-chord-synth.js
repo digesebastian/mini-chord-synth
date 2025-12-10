@@ -62,13 +62,6 @@ function playSines(nodes) {
   synth.triggerAttackRelease(withBass, "4n");
 }
 
-function playPluck(nodes) {
-  nodes.forEach(n => {
-    const synth = new Tone.PluckSynth().toDestination()
-    synth.triggerAttackRelease(n, '4n')
-  })
-}
-
 function changeScaleRoot(root) {
   scaleSemitones = parseInt(root);
 }
