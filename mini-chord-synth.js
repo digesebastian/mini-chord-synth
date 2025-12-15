@@ -2,6 +2,9 @@ import { scales, scaleNames } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
+import { Guitar } from "./guitar.js";
+import { guitarChordsTest } from "./guitar.js";
+import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
 
 // MODEL
@@ -28,6 +31,7 @@ const INSTRUMENTS = ['Sines', 'Sawtooth'];
 // VARIABLES
 
 let joy;
+let guitar;
 
 let sineSynth;
 
@@ -267,7 +271,6 @@ function addJoystick() {
 addKeys();
 addScaleRootDropdownOptions();
 addScaleTypeDropdownOptions();
-addInstrumentDropdownOptions();
 addJoystick();
 
 // ACOUSTIC GUITAR
@@ -499,13 +502,41 @@ function addGuitarKeys() {
     const k = document.createElement("button");
     k.classList.add("chord-key", "guitar-key");
     k.innerText = `Strum ${chordName}`;
-    k.addEventListener("click", () => {
-        if (ctxt.state === 'suspended') ctxt.resume();
-        Guitar.strumChord(chordName);
+    k.addEventListener("click", async () => {
+        if (ctxt.state === 'suspended') {
+            await ctxt.resume();
+        }
+        guitar.strumChord(chordName);
     });
     keys.appendChild(k);
   }
 }
-addGuitarKeys();
 
+async function initializeApp() {
 
+    document.addEventListener("click", async () => {
+        if (ctxt.state === "suspended") {
+            await ctxt.resume();
+            console.log("AudioContext resumed");
+        }
+    }, { once: true });
+
+    addKeys();
+    addScaleRootDropdownOptions();
+    addScaleTypeDropdownOptions();
+    addInstrumentDropdownOptions();
+    addJoystick();
+    
+    
+    console.log("Starting AudioWorklet setup...");
+    await setupWorklet(ctxt); 
+    console.log("AudioWorklet successfully loaded.");
+
+    guitar = new Guitar(ctxt);
+    guitar.initializeStrings(); 
+    console.log("Guitar strings initialized:", guitar.strings.length);
+    
+    addGuitarKeys();
+}
+
+initializeApp();
