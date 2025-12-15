@@ -100,7 +100,11 @@ function changeScaleType(scaleType) {
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
 const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
-function handleChordKey(e) {
+async function handleChordKey(e) {
+  if (!isInitialized) {
+    await Tone.start()
+    isInitialized = true;
+  }
   const key = e.key.toLowerCase();
 
   const index = chordKeys.indexOf(key);
@@ -108,20 +112,14 @@ function handleChordKey(e) {
     e.preventDefault()
     const buttons = document.querySelectorAll(".chord-key");
     const btn = buttons[index];
-    // pressed görünümü
     btn.classList.add("pressed");
     setTimeout(() => btn.classList.remove("pressed"), 150);
 
-    // sesi çal
     btn.click();
   }
 }
 
 async function handleKeydown(e) {
-  if (!isInitialized) {
-    await Tone.start()
-    isInitialized = true;
-  }
   if (e.repeat) {
     return // ignore keydown if it is fired from holding down a key
   }
@@ -137,6 +135,7 @@ document.addEventListener("keydown", async (e) => await handleKeydown(e))
 
 function handleKeyup(e) {
   if (isKeyForJoystick(e.key)) {
+    e.preventDefault();
     const joyStickPos = handleJoystickKeyup(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
   }
