@@ -1,75 +1,78 @@
 export class Chord {
-    constructor(chordType, root, third, fifth, seventh) {
+    constructor(chordType, root, third, fifth, seventh, ninth) {
         this.root = root;
         this.third = third;
         this.fifth = fifth;
         this.seventh = seventh;
+        this.ninth = ninth;
         this.chordType = chordType;
     }
 
     getSemitones() {
-        return [this.root, this.third, this.fifth]
+        return [this.root, this.third, this.fifth, this.seventh, this.ninth]
     }
 
-    
+
     static transformChord(chord, transform) {
         let newChord = this.clone(chord)
-        
+
         switch (transform) {
             case 'None':
                 break;
 
 
             case 'maj/min':
-            // if maj → min
+                // if maj → min
                 if (newChord.chordType === 'maj') {
                     newChord.third -= 1
                     newChord.chordType = 'min'
-            }
-            // if min → maj
+                }
+                // if min → maj
                 else if (newChord.chordType === 'min') {
                     newChord.third += 1
                     newChord.chordType = 'maj'
-            }
+                }
                 break;
-            
+
             case '7th':
                 // dominant 7 
+                newChord.third = newChord.root + 4
                 newChord.seventh = newChord.root + 10
-                break;    
+                break;
 
             case 'maj/min 7th':
-                // first maj↔min 
                 if (newChord.chordType === 'maj') {
-                    newChord.third -= 1
-                    newChord.chordType = 'min'
-            }   else if (newChord.chordType === 'min') {
-                    newChord.third += 1
-                    newChord.chordType = 'maj'
-            }
-                // than maj7 ekleme (root + 11)
-                newChord.seventh = newChord.root + 11
+                    // Major → Major 7
+                    newChord.seventh = newChord.root + 11
+                    
+
+                } else if (newChord.chordType === 'min') {
+                    // Minor → Minor 7
+                    newChord.seventh = newChord.root + 10
+                    
+                }
                 break;
 
             case 'maj/min 9th':
                 // first maj↔min 
                 if (newChord.chordType === 'maj') {
-                    newChord.third -= 1
-                    newChord.chordType = 'min'
-            }   else if (newChord.chordType === 'min') {
-                    newChord.third += 1
-                    newChord.chordType = 'maj'
-            }
-                
-                newChord.ninth = newChord.root + 14
+                    // Major → Major 7
+                    newChord.ninth = newChord.root + 14
+                    
+
+                } else if (newChord.chordType === 'min') {
+                    // Minor → Minor 7
+                    newChord.ninth = newChord.root + 13
+                    
+                }
                 break;
 
             case 'sus4':
-                
+
                 newChord.third = newChord.root + 5
                 break;
 
-            case 'sus2': 
+            case 'sus2':
                 newChord.third = newChord.root + 2;
                 break;
 
@@ -79,7 +82,7 @@ export class Chord {
                 newChord.fifth = newChord.root + 6
                 newChord.chordType = 'dim'
                 break;
-            
+
             case 'aug':
                 // transforming to dim chord
                 newChord.third = newChord.root + 4
@@ -87,14 +90,14 @@ export class Chord {
                 newChord.chordType = 'aug'
                 break;
 
-            
 
-            default: 
+
+            default:
                 console.log("Not implemented")
         }
         return newChord;
     }
-    
+
     static clone(chord) {
         return this.createChord(chord.root, chord.chordType)
     }

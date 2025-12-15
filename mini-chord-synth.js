@@ -62,7 +62,19 @@ function getChord(scaleDegree) {
   const chordThird = getNodeName(chordSemitones[1])
   const chordFifth = getNodeName(chordSemitones[2])
 
-  return [chordRoot, chordThird, chordFifth]
+  const base_triad = [chordRoot, chordThird, chordFifth]
+
+  if (transformedChord.seventh) {
+    base_triad.push(modulate(chordSemitones[3]))
+  }
+
+  if (transformedChord.ninth) {
+    base_triad.push(modulate(chordSemitones[4]))
+  }
+
+  console.log(base_triad);
+  
+  return base_triad
 }
 
 async function play(scaleDegree) {
