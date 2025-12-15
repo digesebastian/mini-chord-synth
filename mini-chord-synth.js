@@ -65,14 +65,12 @@ function getChord(scaleDegree) {
   const base_triad = [chordRoot, chordThird, chordFifth]
 
   if (transformedChord.seventh) {
-    base_triad.push(modulate(chordSemitones[3]))
+    base_triad.push(getNodeName(chordSemitones[3]))
   }
 
   if (transformedChord.ninth) {
-    base_triad.push(modulate(chordSemitones[4]))
+    base_triad.push(getNodeName(chordSemitones[4]))
   }
-
-  console.log(base_triad);
   
   return base_triad
 }
