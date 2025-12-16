@@ -2,6 +2,9 @@ import { scales, scaleNames } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
+import { Guitar } from "./guitar.js";
+import { guitarChordsTest } from "./guitar.js";
+import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
 
 // MODEL
@@ -22,12 +25,15 @@ const TRANSFORMATION_MAP = new Map([
   ['NW', 'aug'],
 ])
 
-const INSTRUMENTS = ['Sines', 'Sawtooth'];
+const INSTRUMENTS = ['Sines', 'Sawtooth', 'Guitar'];
+
+const GUITAR_SCALE_CHORDS = Object.keys(Guitar.chordsFretMap); // ['C', 'Dm', 'Em', 'F', 'G', 'Am', 'Bdim'].
 
 
 // VARIABLES
 
 let joy;
+let guitar;
 
 let sineSynth;
 
@@ -42,6 +48,8 @@ let chordTransform = 'None';
 let currentInstrument = 'Sines';
 
 let isInitialized = false;
+
+const ctxt = new AudioContext();
 
 // CONTROLLER
 
@@ -116,6 +124,13 @@ async function play(scaleDegree) {
     playSines(getChord(scaleDegree));
   } else if (currentInstrument === 'Sawtooth') {
     playSawtooth(getChord(scaleDegree));
+  } else if (currentInstrument === 'Guitar') {
+    const chordName = GUITAR_SCALE_CHORDS[scaleDegree];
+    if (chordName) {
+        guitar.strumChord(chordName);
+    } else {
+        console.warn(`No guitar chord found for scale degree: ${scaleDegree}`);
+    }
   }
 }
 
@@ -264,8 +279,32 @@ function addJoystick() {
   });
 }
 
-addKeys();
-addScaleRootDropdownOptions();
-addScaleTypeDropdownOptions();
-addInstrumentDropdownOptions();
-addJoystick();
+
+async function initializeApp() {
+
+    document.addEventListener("click", async () => {
+        if (ctxt.state === "suspended") {
+            await ctxt.resume();
+            console.log("AudioContext resumed");
+        }
+    }, { once: true });
+
+    addKeys();
+    addScaleRootDropdownOptions();
+    addScaleTypeDropdownOptions();
+    addInstrumentDropdownOptions();
+    addJoystick();
+    
+    
+    console.log("Starting AudioWorklet setup...");
+    await setupWorklet(ctxt); 
+    console.log("AudioWorklet successfully loaded.");
+
+    guitar = new Guitar(ctxt);
+    guitar.initializeStrings(); 
+    console.log("Guitar strings initialized:", guitar.strings.length);
+    
+    addGuitarKeys();
+}
+
+initializeApp();
