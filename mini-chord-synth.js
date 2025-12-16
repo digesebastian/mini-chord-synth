@@ -121,7 +121,7 @@ function getChord(scaleDegree) {
   return outputChord
 }
 
-async function pressKey(scaleDegree) {
+async function play(scaleDegree) {
   if (!isInitialized) {
     await Tone.start()
     isInitialized = true;
@@ -140,11 +140,9 @@ async function pressKey(scaleDegree) {
   }
 }
 
-function releaseKey(scaleDegree) {
-  console.log(scaleDegree, currentlyPlayingStepInScale);
-  
+function releaseChordKey(scaleDegree) {
   if (scaleDegree !== currentlyPlayingStepInScale) {
-   return; // only release if the currently playing key is released
+    return; // only release if the currently playing key is released
   }
 
   if (currentInstrument === 'Sines') {
@@ -157,7 +155,7 @@ function releaseKey(scaleDegree) {
 }
 
 function playSynth(nodes, synth) {
-  if (currentlyPlayingChord !== null) {
+  if (chordIsPlaying()) {
     synth.triggerRelease(currentlyPlayingChord); // releases currently playing chord
   }
   const bass = nodes[0].replace(/4/g, '3');
@@ -195,8 +193,8 @@ async function handleChordKeyDown(e) {
     const buttons = document.querySelectorAll(".chord-key");
     buttons.forEach(btn => btn.classList.remove("pressed"));
     buttons[index].classList.add("pressed");
-
-    pressKey(index);
+    
+    play(index);
   }
 }
 
@@ -207,7 +205,7 @@ function handleChordKeyUp(e) {
     const buttons = document.querySelectorAll(".chord-key");
     buttons[index].classList.remove("pressed");
     
-    releaseKey(index);
+    releaseChordKey(index);
   }
 }
 
@@ -219,6 +217,10 @@ async function handleKeydown(e) {
     e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
+    if (chordIsPlaying()) {
+      // update currently playing chord
+      play(currentlyPlayingStepInScale);
+    }
   } else {
     handleChordKeyDown(e)
   }
@@ -230,12 +232,19 @@ function handleKeyup(e) {
     e.preventDefault();
     const joyStickPos = handleJoystickKeyup(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
+    if (chordIsPlaying()) {
+      // update currently playing chord
+      play(currentlyPlayingStepInScale);
+    }
   } else {
     handleChordKeyUp(e)
   }
 }
 document.addEventListener("keyup", e => handleKeyup(e))
 
+function chordIsPlaying() {
+  return currentlyPlayingChord !== null;
+}
 
 // VIEW
 
@@ -244,7 +253,8 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.addEventListener("click", async () => await pressKey(i))
+    k.addEventListener("mousedown", async () => await play(i))
+    k.addEventListener("mouseup", () => releaseChordKey(i))
     keys.appendChild(k);
   }
 }
