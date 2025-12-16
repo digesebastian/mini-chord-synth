@@ -19,9 +19,10 @@
 [x] Fit all chords of scale within one octave  
 
 ### Sound
-[x] Make some default sound  
-[] Improve the sound  
-[] Make it possible to choose different sounds  
+[x] Make some default sound 
+[x] Improve the sound  
+[x] Make it possible to choose different sounds  
+[] Add guitar sound
 
 ### Design
 [] Design a layout for the synth  
