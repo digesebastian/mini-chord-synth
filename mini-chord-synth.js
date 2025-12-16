@@ -6,6 +6,7 @@ import { Guitar } from "./guitar.js";
 import { guitarChordsTest } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
+import { log } from "tone/build/esm/core/util/Debug.js";
 
 // MODEL
 
@@ -33,6 +34,7 @@ const GUITAR_SCALE_CHORDS = Object.keys(Guitar.chordsFretMap); // ['C', 'Dm', 'E
 // VARIABLES
 
 let joy;
+
 let guitar;
 
 let sineSynth;
@@ -48,6 +50,10 @@ let chordTransform = 'None';
 let currentInstrument = 'Sines';
 
 let isInitialized = false;
+
+let currentlyPlayingChord = null;
+
+let currentlyPlayingStepInScale = null;
 
 const ctxt = new AudioContext();
 
@@ -115,35 +121,49 @@ function getChord(scaleDegree) {
   return outputChord
 }
 
-async function play(scaleDegree) {
+async function pressKey(scaleDegree) {
   if (!isInitialized) {
     await Tone.start()
     isInitialized = true;
   }
+  currentlyPlayingStepInScale = scaleDegree;
+
   if (currentInstrument === 'Sines') {
-    playSines(getChord(scaleDegree));
+    playSynth(getChord(scaleDegree), sineSynth);
   } else if (currentInstrument === 'Sawtooth') {
-    playSawtooth(getChord(scaleDegree));
+    playSynth(getChord(scaleDegree), sawSynth);
   } else if (currentInstrument === 'Guitar') {
     const chordName = GUITAR_SCALE_CHORDS[scaleDegree];
     if (chordName) {
         guitar.strumChord(chordName);
-    } else {
-        console.warn(`No guitar chord found for scale degree: ${scaleDegree}`);
     }
   }
 }
 
-function playSines(nodes) {
-  const bass = nodes[0].replace(/4/g, '3');
-  const withBass = [bass].concat(nodes)
-  sineSynth.triggerAttackRelease(withBass, "4n");
+function releaseKey(scaleDegree) {
+  console.log(scaleDegree, currentlyPlayingStepInScale);
+  
+  if (scaleDegree !== currentlyPlayingStepInScale) {
+   return; // only release if the currently playing key is released
+  }
+
+  if (currentInstrument === 'Sines') {
+    sineSynth.triggerRelease(currentlyPlayingChord);
+  } else if (currentInstrument === 'Sawtooth') {
+    sawSynth.triggerRelease(currentlyPlayingChord);
+  }
+  currentlyPlayingChord = null;
+  currentlyPlayingStepInScale = null;
 }
 
-function playSawtooth(nodes) {
+function playSynth(nodes, synth) {
+  if (currentlyPlayingChord !== null) {
+    synth.triggerRelease(currentlyPlayingChord); // releases currently playing chord
+  }
   const bass = nodes[0].replace(/4/g, '3');
   const withBass = [bass].concat(nodes)
-  sawSynth.triggerAttackRelease(withBass, "4n");
+  currentlyPlayingChord = withBass;
+  synth.triggerAttack(withBass);
 }
 
 function changeScaleRoot(root) {
@@ -151,8 +171,8 @@ function changeScaleRoot(root) {
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
-function changeScaleType(scaleType) {
-  scaleType = parseInt(scaleType);
+function changeScaleType(newScale) {
+  scaleType = parseInt(newScale);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
@@ -162,7 +182,7 @@ function changeInstrument(instrument) {
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
 const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
-async function handleChordKey(e) {
+async function handleChordKeyDown(e) {
   if (!isInitialized) {
     await Tone.start()
     isInitialized = true;
@@ -173,11 +193,21 @@ async function handleChordKey(e) {
   if (index !== -1) {
     e.preventDefault()
     const buttons = document.querySelectorAll(".chord-key");
-    const btn = buttons[index];
-    btn.classList.add("pressed");
-    setTimeout(() => btn.classList.remove("pressed"), 150);
+    buttons.forEach(btn => btn.classList.remove("pressed"));
+    buttons[index].classList.add("pressed");
 
-    btn.click();
+    pressKey(index);
+  }
+}
+
+function handleChordKeyUp(e) {
+  const key = e.key.toLowerCase();
+  const index = chordKeys.indexOf(key);
+  if (index !== -1) {
+    const buttons = document.querySelectorAll(".chord-key");
+    buttons[index].classList.remove("pressed");
+    
+    releaseKey(index);
   }
 }
 
@@ -190,7 +220,7 @@ async function handleKeydown(e) {
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
   } else {
-    handleChordKey(e)
+    handleChordKeyDown(e)
   }
 }
 document.addEventListener("keydown", async (e) => await handleKeydown(e))
@@ -200,6 +230,8 @@ function handleKeyup(e) {
     e.preventDefault();
     const joyStickPos = handleJoystickKeyup(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
+  } else {
+    handleChordKeyUp(e)
   }
 }
 document.addEventListener("keyup", e => handleKeyup(e))
@@ -212,7 +244,7 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.addEventListener("click", async () => await play(i))
+    k.addEventListener("click", async () => await pressKey(i))
     keys.appendChild(k);
   }
 }
@@ -296,15 +328,10 @@ async function initializeApp() {
     addJoystick();
     
     
-    console.log("Starting AudioWorklet setup...");
     await setupWorklet(ctxt); 
-    console.log("AudioWorklet successfully loaded.");
 
     guitar = new Guitar(ctxt);
     guitar.initializeStrings(); 
-    console.log("Guitar strings initialized:", guitar.strings.length);
-    
-    addGuitarKeys();
 }
 
 initializeApp();
