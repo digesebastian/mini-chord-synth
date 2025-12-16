@@ -26,9 +26,6 @@ const TRANSFORMATION_MAP = new Map([
 
 const INSTRUMENTS = ['Sines', 'Sawtooth', 'Guitar'];
 
-const GUITAR_SCALE_CHORDS = Object.keys(Guitar.chordsFretMap); // ['C', 'Dm', 'Em', 'F', 'G', 'Am', 'Bdim'].
-
-
 // VARIABLES
 
 let joy;
@@ -373,10 +370,12 @@ async function initializeApp() {
 
   await setupWorklet(ctxt);
 
-  guitar = new Guitar(ctxt);
-  guitar.initializeStrings();
+    guitar = new Guitar(ctxt);
+    guitar.initializeStrings(); 
+    console.log("Guitar strings initialized:", guitar.strings.length);
+    
+    //addGuitarKeys();
 }
-
 
 // --- MINI PIANO ---
 function renderMiniPiano(octaves = 2, baseOctave = 4) {
@@ -439,5 +438,6 @@ function clearMiniPiano() {
   document.querySelectorAll("#piano .pkey")
     .forEach(k => k.classList.remove("active", "bass"));
 }
+
 
 initializeApp();
