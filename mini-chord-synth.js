@@ -3,7 +3,7 @@ import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
-import { guitarChordsTest } from "./guitar.js";
+//import { guitarChordsTest } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
 
@@ -26,9 +26,6 @@ const TRANSFORMATION_MAP = new Map([
 ])
 
 const INSTRUMENTS = ['Sines', 'Sawtooth', 'Guitar'];
-
-const GUITAR_SCALE_CHORDS = Object.keys(Guitar.chordsFretMap); // ['C', 'Dm', 'Em', 'F', 'G', 'Am', 'Bdim'].
-
 
 // VARIABLES
 
@@ -125,12 +122,15 @@ async function play(scaleDegree) {
   } else if (currentInstrument === 'Sawtooth') {
     playSawtooth(getChord(scaleDegree));
   } else if (currentInstrument === 'Guitar') {
-    const chordName = GUITAR_SCALE_CHORDS[scaleDegree];
-    if (chordName) {
-        guitar.strumChord(chordName);
-    } else {
-        console.warn(`No guitar chord found for scale degree: ${scaleDegree}`);
-    }
+    const scale = scales.get(scaleType);
+    const baseChord = scale[scaleDegree];
+    const transformedChord = Chord.transformChord(baseChord, chordTransform);
+
+    const chordSemitones = transformedChord.getSemitones()
+        .filter(s => s !== undefined)
+        .map(s => (s + scaleSemitones) % 12);
+
+    guitar.strumFromSemitones(chordSemitones);
   }
 }
 
@@ -151,8 +151,8 @@ function changeScaleRoot(root) {
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
-function changeScaleType(scaleType) {
-  scaleType = parseInt(scaleType);
+function changeScaleType(newScale) {
+  scaleType = parseInt(newScale);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
@@ -304,7 +304,7 @@ async function initializeApp() {
     guitar.initializeStrings(); 
     console.log("Guitar strings initialized:", guitar.strings.length);
     
-    addGuitarKeys();
+    //addGuitarKeys();
 }
 
 initializeApp();

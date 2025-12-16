@@ -90,6 +90,8 @@ export function setupWorklet(audioContext) {
     return workletLoadPromise;
 }
 
+
+
 // Karplus-Strong algorithm : single guitar string
 class GuitarString {
     constructor(audioCtx, openNoteHz, velocity = 0.7) {
@@ -165,15 +167,8 @@ class GuitarString {
 // corresponds to the MIDI note numbers: 40, 45, 50, 55, 59, 64
 export class Guitar {
 
-    static chordsFretMap = {
-            'C': [3, 3, 2, 0, 1, 0], 
-            'Dm': [-1, -1, 0, 2, 3, 1], // -1 means chord is muted
-            'Em': [0, 2, 2, 0, 0, 0],
-            'F': [1, 3, 3, 2, 1, 1], 
-            'G': [3, 2, 0, 0, 0, 3],
-            'Am': [0, 0, 2, 2, 1, 0],
-            'Bdim': [-1, 2, 0, 4, 3, 1],
-        };
+    static OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64];
+    static OPEN_STRING_PITCH = Guitar.OPEN_STRING_MIDI.map(m => m % 12);
 
     constructor(audioContext) {
         this.context = audioContext;
@@ -185,44 +180,57 @@ export class Guitar {
         this.strings = [];
     }
 
+    calculateTriadFrets(chordPitchClasses, maxFret = 12) {
+    const frets = [];
+
+    for (let string = 0; string < 6; string++) {
+        const openPitch = Guitar.OPEN_STRING_PITCH[string];
+        let chosenFret = -1;
+
+        for (let fret = 0; fret <= maxFret; fret++) {
+            const notePC = (openPitch + fret) % 12;
+            if (chordPitchClasses.includes(notePC)) {
+                chosenFret = fret;
+                break;
+            }
+        }
+
+        frets.push(chosenFret);
+    }
+
+    return frets;
+    }
+
+
     initializeStrings() {
         this.strings = this.openStringFrets.map(hz => new GuitarString(this.context, hz));
     }
 
-    // playing the chord
-    // velocity: velocity of the strumming 
-    // timeUnit: simulate delay between successive strings
-    strumChord(chordName, velocity = 0.9, timeUnit = 0.05) {
-        if (this.strings.length === 0) {
-            console.warn("Worklet loading incomplete");
-            return;
+    strumFromSemitones(chordSemitones, velocity = 0.9, timeUnit = 0.05) {
+    if (this.strings.length === 0) return;
+
+    const chordPitches = chordSemitones
+        .filter(s => s !== undefined)
+        .map(s => ((s % 12) + 12) % 12);
+
+    const fretMap = this.calculateTriadFrets(chordPitches);
+
+    const now = this.context.currentTime;
+    let strumTime = now;
+
+    for (let i = 0; i < 6; i++) {
+        const fret = fretMap[i];
+        const string = this.strings[i];
+
+        if (fret !== -1) {
+            string.velocity = velocity * (1.0 - Math.random() * 0.1);
+            string.pluck(strumTime, fret);
         }
 
-        const fretMap = Guitar.chordsFretMap[chordName];
-        if (!fretMap) {
-            console.error('Chord map not found for:' + chordName);
-            return;
-        }
-
-        const now = this.context.currentTime;
-        let strumTime = now;
-
-        // downstroke simulation
-        // loop iterates from index 0 to 5 -> low E to high e
-        for (let i = 0; i < 6; i++) {
-            const fret = fretMap[i];
-            const string = this.strings[i];
-            if (fret !== -1) {
-                string.velocity = velocity * (1.0 - Math.random() * 0.1); // velocity variation (randomness)
-                string.pluck(strumTime, fret); 
-            }
-
-            strumTime += timeUnit + (Math.random() * 0.005); // incrementing time for the next string 
-        }
+        strumTime += timeUnit + Math.random() * 0.005;
+    }
     }
 }
-
-export const guitarChordsTest = Object.keys(Guitar.chordsFretMap); 
 
 
 
