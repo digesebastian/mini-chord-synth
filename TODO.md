@@ -21,7 +21,8 @@
 ### Sound
 [x] Make some default sound 
 [x] Improve the sound  
-[] Make it possible to choose different sounds  
+[x] Make it possible to choose different sounds  
+[] Add guitar sound
 
 ### Design
 [] Design a layout for the synth  

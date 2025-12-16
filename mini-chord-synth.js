@@ -4,21 +4,42 @@ import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import * as Tone from "tone";
 
+// MODEL
+
+// CONSTANTS
+
+const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+const TRANSFORMATION_MAP = new Map([
+  ['C', 'None'],
+  ['N', 'maj/min'],
+  ['NE', '7th'],
+  ['E', 'maj/min 7th'],
+  ['SE', 'maj/min 9th'],
+  ['S', 'sus4'],
+  ['SW', 'sus2'],
+  ['W', 'dim'],
+  ['NW', 'aug'],
+])
+
+const INSTRUMENTS = ['Sines', 'Sawtooth'];
+
+
 // VARIABLES
 
 let joy;
 
-let synth;
+let sineSynth;
 
-// MODEL
-
-const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+let sawSynth;
 
 let scaleSemitones = 0;
 
 let scaleType = 0;
 
 let chordTransform = 'None';
+
+let currentInstrument = 'Sines';
 
 let isInitialized = false;
 
@@ -32,7 +53,18 @@ function initializeAudioContext() {
     attack: 0.1,
     release: 0.5
   }).connect(gain)
-  synth = new Tone.PolySynth(Tone.Synth, {
+  sineSynth = new Tone.PolySynth(Tone.Synth, {
+    envelope: {
+      attack: 0.2,
+      decay: 0.2,
+      sustain: 0.5,
+      release: 0.5
+    }
+  }).connect(compressor);
+  sawSynth = new Tone.PolySynth(Tone.Synth, {
+    oscillator: {
+      type: "sawtooth"
+    },
     envelope: {
       attack: 0.2,
       decay: 0.2,
@@ -50,9 +82,9 @@ function getNodeName(semitones) {
 function getChord(scaleDegree) {
   const scale = scales.get(scaleType);
 
-  const chord = scale[scaleDegree];
+  const baseChord = scale[scaleDegree];
 
-  const transformedChord = Chord.transformChord(chord, chordTransform);
+  const transformedChord = Chord.transformChord(baseChord, chordTransform);
 
   const chordSemitones = transformedChord.getSemitones()
     .map(s => (s + scaleSemitones)) // adjust to current scale
@@ -62,17 +94,17 @@ function getChord(scaleDegree) {
   const chordThird = getNodeName(chordSemitones[1])
   const chordFifth = getNodeName(chordSemitones[2])
 
-  const base_triad = [chordRoot, chordThird, chordFifth]
+  const outputChord = [chordRoot, chordThird, chordFifth]
 
   if (transformedChord.seventh) {
-    base_triad.push(getNodeName(chordSemitones[3]))
+    outputChord.push(getNodeName(chordSemitones[3]))
   }
 
   if (transformedChord.ninth) {
-    base_triad.push(getNodeName(chordSemitones[4]))
+    outputChord.push(getNodeName(chordSemitones[4]))
   }
   
-  return base_triad
+  return outputChord
 }
 
 async function play(scaleDegree) {
@@ -80,13 +112,23 @@ async function play(scaleDegree) {
     await Tone.start()
     isInitialized = true;
   }
-  playSines(getChord(scaleDegree));
+  if (currentInstrument === 'Sines') {
+    playSines(getChord(scaleDegree));
+  } else if (currentInstrument === 'Sawtooth') {
+    playSawtooth(getChord(scaleDegree));
+  }
 }
 
 function playSines(nodes) {
   const bass = nodes[0].replace(/4/g, '3');
   const withBass = [bass].concat(nodes)
-  synth.triggerAttackRelease(withBass, "4n");
+  sineSynth.triggerAttackRelease(withBass, "4n");
+}
+
+function playSawtooth(nodes) {
+  const bass = nodes[0].replace(/4/g, '3');
+  const withBass = [bass].concat(nodes)
+  sawSynth.triggerAttackRelease(withBass, "4n");
 }
 
 function changeScaleRoot(root) {
@@ -98,6 +140,11 @@ function changeScaleType(scaleType) {
   scaleType = parseInt(scaleType);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
+
+function changeInstrument(instrument) {
+  currentInstrument = instrument;
+}
+document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
 const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
 async function handleChordKey(e) {
@@ -197,23 +244,22 @@ function addScaleTypeDropdownOptions() {
   }
 }
 
-const transformationMap = new Map([
-  ['C', 'None'],
-  ['N', 'maj/min'],
-  ['NE', '7th'],
-  ['E', 'maj/min 7th'],
-  ['SE', 'maj/min 9th'],
-  ['S', 'sus4'],
-  ['SW', 'sus2'],
-  ['W', 'dim'],
-  ['NW', 'aug'],
-])
+function addInstrumentDropdownOptions() {
+  const dropdown = document.getElementById("instrument-select")
+  for (let i = 0; i < INSTRUMENTS.length; i++) {
+    const option = document.createElement("option");
+    option.value = INSTRUMENTS[i];
+    option.textContent = INSTRUMENTS[i];
+    dropdown.appendChild(option)
+  }
+}
+
 function addJoystick() {
   const joyParams = { "autoReturnToCenter": false }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
-    chordTransform = transformationMap.get(stickData.cardinalDirection);
+    chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
     joystickDirection.value = chordTransform;
   });
 }
@@ -221,4 +267,5 @@ function addJoystick() {
 addKeys();
 addScaleRootDropdownOptions();
 addScaleTypeDropdownOptions();
+addInstrumentDropdownOptions();
 addJoystick();
