@@ -114,7 +114,7 @@ function getChord(scaleDegree) {
   if (transformedChord.ninth) {
     outputChord.push(getNodeName(chordSemitones[4]))
   }
-  
+
   return outputChord
 }
 
@@ -132,7 +132,7 @@ async function play(scaleDegree) {
   } else if (currentInstrument === 'Guitar') {
     const chordName = GUITAR_SCALE_CHORDS[scaleDegree];
     if (chordName) {
-        guitar.strumChord(chordName);
+      guitar.strumChord(chordName);
     }
   }
 }
@@ -190,7 +190,7 @@ async function handleChordKeyDown(e) {
     const buttons = document.querySelectorAll(".chord-key");
     buttons.forEach(btn => btn.classList.remove("pressed"));
     buttons[index].classList.add("pressed");
-    
+
     play(index);
   }
 }
@@ -201,17 +201,17 @@ function handleChordKeyUp(e) {
   if (index !== -1) {
     const buttons = document.querySelectorAll(".chord-key");
     buttons[index].classList.remove("pressed");
-    
+
     releaseChordKey(index);
   }
 }
 
 async function handleKeydown(e) {
-  if (e.repeat) {
-    return // ignore keydown if it is fired from holding down a key
-  }
+  e.preventDefault(); // prevent page scrolling
+    if (e.repeat) {
+      return // ignore keydown if it is fired from holding down a key
+    }
   if (isKeyForJoystick(e.key)) {
-    e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
     if (chordIsPlaying()) {
@@ -320,25 +320,25 @@ function addJoystick() {
 
 
 async function initializeApp() {
-    document.addEventListener("click", async () => {
-        if (ctxt.state === "suspended") {
-            await ctxt.resume();
-            console.log("AudioContext resumed");
-        }
-    }, { once: true });
-    initializeAudioContext()
+  document.addEventListener("click", async () => {
+    if (ctxt.state === "suspended") {
+      await ctxt.resume();
+      console.log("AudioContext resumed");
+    }
+  }, { once: true });
+  initializeAudioContext()
 
-    addKeys();
-    addScaleRootDropdownOptions();
-    addScaleTypeDropdownOptions();
-    addInstrumentDropdownOptions();
-    addJoystick();
-    
-    
-    await setupWorklet(ctxt); 
+  addKeys();
+  addScaleRootDropdownOptions();
+  addScaleTypeDropdownOptions();
+  addInstrumentDropdownOptions();
+  addJoystick();
 
-    guitar = new Guitar(ctxt);
-    guitar.initializeStrings(); 
+
+  await setupWorklet(ctxt);
+
+  guitar = new Guitar(ctxt);
+  guitar.initializeStrings();
 }
 
 initializeApp();
