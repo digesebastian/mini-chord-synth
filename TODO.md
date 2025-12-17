@@ -14,7 +14,7 @@
    [x] Improve functionality for multiple keys pressed
 
 ### Chords
-[x] Add 1 chord extension  
+[x] Add 1 chord extension
     [] Add remaining chord extensions  
 [x] Fit all chords of scale within one octave  
 

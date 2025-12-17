@@ -3,10 +3,8 @@ import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
-import { guitarChordsTest } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
-import { log } from "tone/build/esm/core/util/Debug.js";
 
 // MODEL
 
@@ -87,7 +85,6 @@ function initializeAudioContext() {
     }
   }).connect(compressor);
 }
-initializeAudioContext()
 
 function getNodeName(semitones) {
   return NODE_NAMES[semitones] + '4'
@@ -323,13 +320,13 @@ function addJoystick() {
 
 
 async function initializeApp() {
-
     document.addEventListener("click", async () => {
         if (ctxt.state === "suspended") {
             await ctxt.resume();
             console.log("AudioContext resumed");
         }
     }, { once: true });
+    initializeAudioContext()
 
     addKeys();
     addScaleRootDropdownOptions();
