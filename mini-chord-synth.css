@@ -1,10 +1,19 @@
 .chord-key {
-    height: 200px;
-    width: 200px;
-    border: solid 1px black
+  position: absolute;
+  aspect-ratio: 1/cos(30deg);
+  clip-path: polygon(50% -50%, 100% 50%, 50% 150%, 0 50%);
+    border: solid 1px black;
+    height: 150px;
+    width: 180px; 
+    top: var(--y);
+    left: var(--x);
 }
 
+
+
+
 .joystick-box {
+
     height: 200px;
     width: 200px;
     border: solid 1px black
@@ -13,4 +22,47 @@
 .chord-key.pressed {
   background-color: #ffda75;
   transform: scale(0.96);
+}
+
+body {
+  margin:0;
+  display: flex;
+  justify-content: center;
+
+}
+
+#mini-synth {
+
+  margin-top:30px;  
+  height: 800px;
+  width: 900px;
+  border: solid 1px black;
+}
+
+#keys {
+  position: relative;
+  padding-top:30px;
+  height:50%;
+  width: 100%;
+  border: solid 1px black;
+}
+
+#controls {
+  display: flex;
+  flex-direction: row;
+  height:50%;
+  width: 100%;
+  border: solid 1px black;
+}
+
+#controls-1 {
+  flex:1;
+}
+
+#controls-2 {
+  flex:1;
+}
+
+#controls-3 {
+  flex:1;
 }

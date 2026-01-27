@@ -256,11 +256,25 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
+   // k.style.top = positions[i].y+"%";
+    //k.style.left = positions[i].x+"%";
+    k.style.setProperty('--x', positions[i].x+"%");
+    k.style.setProperty('--y', positions[i].y+"%");
     k.addEventListener("mousedown", async () => await play(i))
     k.addEventListener("mouseup", () => releaseChordKey(i))
     keys.appendChild(k);
   }
 }
+const positions = [
+  {x: 10, y:50},
+  {x: 30, y:20},
+  {x: 30, y:80},
+  {x: 50, y:50},
+  {x: 70, y:20},
+  {x: 70, y:80},
+  {x: 90, y:50}
+
+];
 
 function addScaleRootDropdownOptions() {
   // scale names and number of semitones above C
