@@ -191,20 +191,27 @@ async function handleChordKeyDown(e) {
   const index = chordKeys.indexOf(key);
   if (index !== -1) {
     e.preventDefault()
-    const buttons = document.querySelectorAll(".chord-key");
-    buttons.forEach(btn => btn.classList.remove("pressed"));
-    buttons[index].classList.add("pressed");
-
+    showKeyPressed(index)
     play(index);
   }
+}
+
+function showKeyPressed(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons.forEach(btn => btn.classList.remove("pressed"));
+  buttons[index].classList.add("pressed");
+}
+
+function showKeyReleased(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons[index].classList.remove("pressed");
 }
 
 function handleChordKeyUp(e) {
   const key = e.key.toLowerCase();
   const index = chordKeys.indexOf(key);
   if (index !== -1) {
-    const buttons = document.querySelectorAll(".chord-key");
-    buttons[index].classList.remove("pressed");
+    showKeyReleased(index)
 
     releaseChordKey(index);
   }
@@ -258,8 +265,14 @@ function addKeys() {
     k.classList.add("chord-key");
     k.style.setProperty('--x', positions[i].x+"%");
     k.style.setProperty('--y', positions[i].y+"%");
-    k.addEventListener("mousedown", async () => await play(i))
-    k.addEventListener("mouseup", () => releaseChordKey(i))
+    k.addEventListener("mousedown", async () => {
+      showKeyPressed(i)
+      await play(i)
+    })
+    k.addEventListener("mouseup", () => {
+      showKeyReleased(i)
+      releaseChordKey(i)
+    })
     keys.appendChild(k);
   }
 }
@@ -300,7 +313,7 @@ function addScaleRootDropdownOptions() {
   scaleMap.forEach((v, k) => {
     const option = document.createElement("option");
     option.value = v;
-    option.textContent = k;
+    option.textContent = `root: ${k}`;
     dropdown.appendChild(option)
   })
 }
@@ -311,7 +324,7 @@ function addScaleTypeDropdownOptions() {
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
-    option.textContent = scaleNames.get(i);
+    option.textContent = `scale: ${scaleNames.get(i)}`;
     dropdown.appendChild(option)
   }
 }
@@ -321,7 +334,7 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = INSTRUMENTS[i];
+    option.textContent = `instrument: ${INSTRUMENTS[i]}`; 
     dropdown.appendChild(option)
   }
 }

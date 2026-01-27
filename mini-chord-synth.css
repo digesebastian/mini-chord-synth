@@ -1,13 +1,20 @@
 .chord-key {
+  border: none;
+  outline: none;
   position: absolute;
   aspect-ratio: 1/cos(30deg);
   clip-path: polygon(50% -50%, 100% 50%, 50% 150%, 0 50%);
   transform: translate(-50%, -50%);
-    height: 160px;
-    width: 190px; 
-    top: var(--y);
-    left: var(--x);
-  background-color: #efb12c; 
+  height: 160px;
+  width: 190px;
+  top: var(--y);
+  left: var(--x);
+  background-color: #efb12c;
+
+  background: linear-gradient(145deg, #4a5fd0, #3b4cb3);
+  transition: 0.09s ease;
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,.25);
 }
 
 
@@ -15,110 +22,111 @@
 
 .joystick-box {
 
-    height: 200px;
-    width: 200px;
+  height: 200px;
+  width: 200px;
 
 }
 
 .chord-key.pressed {
+  border: none;
+  outline: none;
   background-color: #ffda75;
   scale: 0.96;
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, .3);
+  background: linear-gradient(145deg, #ffda75, #f2c94c);
 }
 
 body {
-  margin:0;
+  margin: 0;
   display: flex;
   justify-content: center;
 }
 
 #mini-synth {
-
-  margin-top:30px;  
+  background-color: #94d2ea;
+  margin-top: 30px;
   height: 800px;
   width: 900px;
   border: solid 1px black;
+   border-radius: 75px;
 }
 
 #keys {
   position: relative;
-  height:50%;
+  height: 50%;
   width: 100%;
-  border: solid 1px black;
+
 }
 
 #controls {
   display: flex;
   flex-direction: row;
-  height:50%;
+  height: 50%;
   width: 100%;
-  border: solid 1px black;
+
 }
 
 #controls-1 {
   padding: 30px;
-  flex:1;
-  
+  flex: 1;
+
 }
 
 #controls-2 {
-  flex:1;
+  flex: 1;
 }
 
 #controls-3 {
   padding: 30px;
-  flex:1;
+  flex: 1;
 }
 
 
 label {
   font-size: 24px;
   font-weight: 500;
-  color: #2c3e50;
+  color: #cfe1f2;
 }
 
 select {
   appearance: none;
-  padding: 16px 50px 16px 20px;  
+  padding: 16px 50px 16px 20px;
   font-size: 18px;
   font-weight: 700;
-  border-radius: 25px; 
-  color: #0a4704;
+  border-radius: 25px;
+  color: #e2e2e2;
   cursor: pointer;
   background-image: url('data:image/svg+xml;utf8,<svg fill="%232c3e50" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
   background-repeat: no-repeat;
-  background-position: right 12px center;  
+  background-position: right 12px center;
 }
 
 #scale-root-select {
-
-  width: 180px;
-  background-color: #bddc42e5;
-
+  width: 260px;
+  background-color:#3b4cb3;
 }
 
 
 #scale-type-select {
-  margin-top:10px;
-  width: 180px;
-  background-color: #bddc42e5;
-  
-
+  margin-top: 10px;
+  width: 260px;
+  background-color: #3b4cb3;
 }
 
 #instrument-select {
-  margin-top:10px;
-  width: 180px;
-  background-color: #bddc42e5;
-  
+  margin-top: 10px;
+  width: 260px;
+  background-color: #3b4cb3;
 }
 
 #joystick-direction {
-  padding: 16px 50px 16px 20px;  
+  padding: 16px 50px 16px 20px;
   font-size: 18px;
   font-weight: 700;
-  border-radius: 25px; 
-  color: #2c3e50;
+  border-radius: 25px;
+  color: #ffffff;
   background-position: right 12px center;
-   width: 180px;
-  background-color: #bddc42e5;
+  width: 180px;
+  background-color: #3b4cb3;
 }
