@@ -92,11 +92,10 @@ function getNodeName(semitones) {
 
 function getChord(scaleDegree) {
   const scale = scales.get(scaleType);
-  const baseChord = scale[scaleDegree];
 
-  const transformedChord = Chord.transformChord(baseChord, chordTransform);
+  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
 
-  const chordSemitones = transformedChord.getSemitones()
+  const chordSemitones = chord.getSemitones()
     .map(s => (s + scaleSemitones)) // adjust to current scale
     .map(s => s % 12) // fit all notes in one octave
 
@@ -106,11 +105,11 @@ function getChord(scaleDegree) {
 
   const outputChord = [chordRoot, chordThird, chordFifth]
 
-  if (transformedChord.seventh) {
+  if (chord.seventh) {
     outputChord.push(getNodeName(chordSemitones[3]))
   }
 
-  if (transformedChord.ninth) {
+  if (chord.ninth) {
     outputChord.push(getNodeName(chordSemitones[4]))
   }
   

@@ -1,5 +1,3 @@
-import { createChords } from './chord'
-
 const majorScale = [0, 2, 4, 5, 7, 9, 11];
 
 const minorScale = [0, 2, 3, 5, 7, 8, 10];
@@ -13,7 +11,7 @@ export const scaleNames = new Map([
 ])
 
 export const scales = new Map([
-    [0, createChords(majorScale)],
-    [1, createChords(minorScale)],
-    [2, createChords(melodicMinorScale)]
+    [0, majorScale],
+    [1, minorScale],
+    [2, melodicMinorScale]
 ])

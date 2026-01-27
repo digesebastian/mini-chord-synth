@@ -12,137 +12,127 @@ export class Chord {
         return [this.root, this.third, this.fifth, this.seventh, this.ninth]
     }
 
-    static transformChord(chord, transform) {
-        let newChord = this.clone(chord)
-
+    static transformChord(chord, scale, transform) {
         switch (transform) {
             case 'None':
                 break;
-
             case 'maj/min':
-                // if maj → min
-                if (newChord.chordName === 'maj') {
-                    newChord.third -= 1
-                    newChord.chordName = 'min'
+                if (chord.chordName === 'maj') {
+                    // if maj → min
+                    chord.third -= 1
+                    chord.chordName = 'min'
                 }
-                // if min → maj
-                else if (newChord.chordName === 'min') {
-                    newChord.third += 1
-                    newChord.chordName = 'maj'
+                else if (chord.chordName === 'min') {
+                    // if min → maj
+                    chord.third += 1
+                    chord.chordName = 'maj'
+                }
+                else if (chord.chordName === 'aug') {
+                    // if aug → min
+                    chord.third -= 1
+                    chord.fifth = chord.root + 7
+                    chord.chordName = 'min'
+                }
+                else if (chord.chordName === 'dim') {
+                    // if dim → maj
+                    chord.third += 1
+                    chord.fifth = chord.root + 7
+                    chord.chordName = 'maj'
                 }
                 break;
-
             case '7th':
-                // dominant 7 
-                newChord.third = newChord.root + 4
-                newChord.seventh = newChord.root + 10
+                // dominant 7. Overrides dim and aug
+                chord.third = chord.root + 4
+                chord.fifth = chord.root + 7
+                chord.seventh = chord.root + 10
                 break;
-
             case 'maj/min 7th':
-                if (newChord.chordName === 'maj') {
-                    // Major → Major 7
-                    newChord.seventh = newChord.root + 11
-                    
-
-                } else if (newChord.chordName === 'min') {
-                    // Minor → Minor 7
-                    newChord.seventh = newChord.root + 10
-                    
-                }
+                chord.seventh = scale[(chord.root + 6) % 7]
+                chord.chordName = chord.chordName + " 7th"
                 break;
-
             case 'maj/min 9th':
                 // first maj↔min 
-                if (newChord.chordName === 'maj') {
+                if (chord.chordName === 'maj') {
                     // Major → Major 7
-                    newChord.ninth = newChord.root + 14
-                    
+                    chord.ninth = chord.root + 14
 
-                } else if (newChord.chordName === 'min') {
+
+                } else if (chord.chordName === 'min') {
                     // Minor → Minor 7
-                    newChord.ninth = newChord.root + 13
-                    
+                    chord.ninth = chord.root + 13
+
                 }
                 break;
 
             case 'sus4':
 
-                newChord.third = newChord.root + 5
+                chord.third = chord.root + 5
                 break;
 
             case 'sus2':
-                newChord.third = newChord.root + 2;
+                chord.third = chord.root + 2;
                 break;
 
             case 'dim':
                 // transforming to dim chord
-                newChord.third = newChord.root + 3
-                newChord.fifth = newChord.root + 6
-                newChord.chordName = 'dim'
+                chord.third = chord.root + 3
+                chord.fifth = chord.root + 6
+                chord.chordName = 'dim'
                 break;
 
             case 'aug':
                 // transforming to dim chord
-                newChord.third = newChord.root + 4
-                newChord.fifth = newChord.root + 8
-                newChord.chordName = 'aug'
+                chord.third = chord.root + 4
+                chord.fifth = chord.root + 8
+                chord.chordName = 'aug'
                 break;
-
-
 
             default:
                 console.log("Not implemented")
         }
-        return newChord;
+        return chord;
     }
 
     static clone(chord) {
         return this.createChord(chord.root, chord.third, chord.fifth)
     }
 
-    static createChord(root, third, fifth) {
+    static createChord(scale, degree, transform) {
+        const secondOctave = scale.map(num => num + 12);
+        const twoOctaves = scale.concat(secondOctave);
+
+        const root = twoOctaves[degree];
+        const third = twoOctaves[degree + 2];
+        const fifth = twoOctaves[degree + 4];
+
         let thirdInterval = third - root;
         let fifthInterval = fifth - root;
-        
-        let chordName;
+
+        let chordName = this.getChordName(thirdInterval, fifthInterval);
+
+        let baseChord = new Chord(chordName, root, third, fifth)
+
+        if (transform) {
+            return this.transformChord(baseChord, scale, transform);
+        } else {
+            return baseChord;
+        }
+    }
+
+    static getChordName(thirdInterval, fifthInterval) {
         if (thirdInterval === 4) {
             if (fifthInterval === 7) {
-                chordName = 'maj'
+                return 'maj'
             } else if (fifthInterval === 8) {
-                chordName = 'aug'
-            } else {
-                console.error('Invalid chord intervals')
+                return 'aug'
             }
         } else if (thirdInterval === 3) {
             if (fifthInterval === 7) {
-                chordName = 'min'
+                return 'min'
             } else if (fifthInterval === 6) {
-                chordName = 'dim'
-            } else {
-                console.error('Invalid chord intervals')
+                return 'dim'
             }
-        } else {
-            console.error('Invalid chord intervals')
         }
-
-        return new Chord(chordName, root, third, fifth);
+        console.error("Unrecognized chord");
     }
-}
-
-export function createChords(scale) {
-    const nodesInScale = scale.length;
-    const secondOctave = scale.map(num => num + 12); 
-    const twoOctaves = scale.concat(secondOctave);
-    
-    const chords = [];
-    for (let i = 0; i < nodesInScale; i++) {        
-        const root = twoOctaves[i];
-        const third = twoOctaves[i + 2];
-        const fifth = twoOctaves[i + 4];
-        
-        let chord = Chord.createChord(root, third, fifth);
-        
-        chords.push(chord);
-    }
-    return chords;
 }
