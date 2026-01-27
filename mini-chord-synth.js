@@ -92,7 +92,6 @@ function getNodeName(semitones) {
 
 function getChord(scaleDegree) {
   const scale = scales.get(scaleType);
-
   const baseChord = scale[scaleDegree];
 
   const transformedChord = Chord.transformChord(baseChord, chordTransform);
@@ -114,7 +113,7 @@ function getChord(scaleDegree) {
   if (transformedChord.ninth) {
     outputChord.push(getNodeName(chordSemitones[4]))
   }
-
+  
   return outputChord
 }
 
