@@ -12,7 +12,7 @@ export class Chord {
         return [this.root, this.third, this.fifth, this.seventh, this.ninth]
     }
 
-    static transformChord(chord, scale, transform) {
+    static transformChord(chord, scale, degree,transform) {
         switch (transform) {
             case 'None':
                 break;
@@ -47,7 +47,7 @@ export class Chord {
                 chord.seventh = chord.root + 10
                 break;
             case 'maj/min 7th':
-                chord.seventh = scale[(chord.root + 6) % 7]
+                chord.seventh = scale[(degree + 6) % 7]
                 chord.chordName = chord.chordName + " 7th"
                 break;
             case 'maj/min 9th':
@@ -86,20 +86,18 @@ export class Chord {
                 chord.fifth = chord.root + 8
                 chord.chordName = 'aug'
                 break;
-
             default:
                 console.log("Not implemented")
         }
         return chord;
     }
 
-    static clone(chord) {
-        return this.createChord(chord.root, chord.third, chord.fifth)
-    }
-
     static createChord(scale, degree, transform) {
+        // Using two octaves in order to have the third and fifth above the root
+        // to calculate the third and fifth intervals properly
+        // Could probably be done more elegantly
         const secondOctave = scale.map(num => num + 12);
-        const twoOctaves = scale.concat(secondOctave);
+        const twoOctaves = scale.concat(secondOctave); 
 
         const root = twoOctaves[degree];
         const third = twoOctaves[degree + 2];
@@ -111,12 +109,8 @@ export class Chord {
         let chordName = this.getChordName(thirdInterval, fifthInterval);
 
         let baseChord = new Chord(chordName, root, third, fifth)
-
-        if (transform) {
-            return this.transformChord(baseChord, scale, transform);
-        } else {
-            return baseChord;
-        }
+        
+        return this.transformChord(baseChord, scale, degree, transform)
     }
 
     static getChordName(thirdInterval, fifthInterval) {

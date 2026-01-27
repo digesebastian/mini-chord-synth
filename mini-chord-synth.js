@@ -105,7 +105,7 @@ function getChord(scaleDegree) {
 
   const outputChord = [chordRoot, chordThird, chordFifth]
 
-  if (chord.seventh) {
+  if (chord.seventh !== undefined) {
     outputChord.push(getNodeName(chordSemitones[3]))
   }
 
