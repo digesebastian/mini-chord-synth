@@ -2,11 +2,12 @@
   position: absolute;
   aspect-ratio: 1/cos(30deg);
   clip-path: polygon(50% -50%, 100% 50%, 50% 150%, 0 50%);
-    border: solid 1px black;
-    height: 150px;
-    width: 180px; 
+  transform: translate(-50%, -50%);
+    height: 160px;
+    width: 190px; 
     top: var(--y);
     left: var(--x);
+  background-color: #efb12c; 
 }
 
 
@@ -21,14 +22,13 @@
 
 .chord-key.pressed {
   background-color: #ffda75;
-  transform: scale(0.96);
+  scale: 0.96;
 }
 
 body {
   margin:0;
   display: flex;
   justify-content: center;
-
 }
 
 #mini-synth {
@@ -41,7 +41,6 @@ body {
 
 #keys {
   position: relative;
-  padding-top:30px;
   height:50%;
   width: 100%;
   border: solid 1px black;
