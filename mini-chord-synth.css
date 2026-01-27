@@ -17,7 +17,7 @@
 
     height: 200px;
     width: 200px;
-    border: solid 1px black
+
 }
 
 .chord-key.pressed {
@@ -55,7 +55,9 @@ body {
 }
 
 #controls-1 {
+  padding: 30px;
   flex:1;
+  
 }
 
 #controls-2 {
@@ -63,5 +65,60 @@ body {
 }
 
 #controls-3 {
+  padding: 30px;
   flex:1;
+}
+
+
+label {
+  font-size: 24px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+select {
+  appearance: none;
+  padding: 16px 50px 16px 20px;  
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 25px; 
+  color: #0a4704;
+  cursor: pointer;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%232c3e50" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 12px center;  
+}
+
+#scale-root-select {
+
+  width: 180px;
+  background-color: #bddc42e5;
+
+}
+
+
+#scale-type-select {
+  margin-top:10px;
+  width: 180px;
+  background-color: #bddc42e5;
+  
+
+}
+
+#instrument-select {
+  margin-top:10px;
+  width: 180px;
+  background-color: #bddc42e5;
+  
+}
+
+#joystick-direction {
+  padding: 16px 50px 16px 20px;  
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 25px; 
+  color: #2c3e50;
+  background-position: right 12px center;
+   width: 180px;
+  background-color: #bddc42e5;
 }
