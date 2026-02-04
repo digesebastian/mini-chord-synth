@@ -58,7 +58,7 @@ const ctxt = new AudioContext();
 // CONTROLLER
 
 function initializeAudioContext() {
-  const gain = new Tone.Gain(0.8).toDestination()
+  const gain = new Tone.Gain(0.4).toDestination()
   const compressor = new Tone.Compressor({
     threshold: -18,
     ratio: 3,
@@ -109,7 +109,7 @@ function getChord(scaleDegree) {
     outputChord.push(getNodeName(chordSemitones[3]))
   }
 
-  if (chord.ninth) {
+  if (chord.ninth !== undefined) {
     outputChord.push(getNodeName(chordSemitones[4]))
   }
   

@@ -48,43 +48,45 @@ export class Chord {
                 break;
             case 'maj/min 7th':
                 chord.seventh = scale[(degree + 6) % 7]
-                chord.chordName = chord.chordName + " 7th"
                 break;
             case 'maj/min 9th':
-                // first maj↔min 
-                if (chord.chordName === 'maj') {
-                    // Major → Major 7
-                    chord.ninth = chord.root + 14
-
-
-                } else if (chord.chordName === 'min') {
-                    // Minor → Minor 7
-                    chord.ninth = chord.root + 13
-
+                chord.seventh = scale[(degree + 6) % 7]
+                if (chord.chordName === 'maj' || chord.chordName === 'min') {
+                    // does not add 9 for dim and aug chords
+                    chord.ninth = scale[(degree + 8) % 7]
                 }
                 break;
-
             case 'sus4':
-
                 chord.third = chord.root + 5
                 break;
-
             case 'sus2':
                 chord.third = chord.root + 2;
                 break;
-
             case 'dim':
-                // transforming to dim chord
-                chord.third = chord.root + 3
-                chord.fifth = chord.root + 6
-                chord.chordName = 'dim'
+                if (chord.chordName !== 'dim') {
+                    // transforming to dim chord
+                    chord.third = chord.root + 3
+                    chord.fifth = chord.root + 6
+                    chord.chordName = 'dim'
+                } else {
+                    // change to minor
+                    chord.third = chord.root + 3
+                    chord.fifth = chord.root + 7
+                    chord.chordName = 'min'
+                }
                 break;
-
             case 'aug':
-                // transforming to dim chord
-                chord.third = chord.root + 4
-                chord.fifth = chord.root + 8
-                chord.chordName = 'aug'
+                if (chord.chordName !== 'aug') {  
+                    // transforming to dim chord
+                    chord.third = chord.root + 4
+                    chord.fifth = chord.root + 8
+                    chord.chordName = 'aug'
+                } else {
+                    // change to major
+                    chord.third = chord.root + 4
+                    chord.fifth = chord.root + 7
+                    chord.chordName = 'maj'
+                }
                 break;
             default:
                 console.log("Not implemented")
@@ -94,7 +96,6 @@ export class Chord {
 
     static createChord(scale, degree, transform) {
         // Using two octaves in order to have the third and fifth above the root
-        // to calculate the third and fifth intervals properly
         // Could probably be done more elegantly
         const secondOctave = scale.map(num => num + 12);
         const twoOctaves = scale.concat(secondOctave); 
