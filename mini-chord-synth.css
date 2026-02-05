@@ -1,16 +1,151 @@
 .chord-key {
-    height: 200px;
-    width: 200px;
-    border: solid 1px black
+  border: none;
+  outline: none;
+  position: absolute;
+  aspect-ratio: 1/cos(30deg);
+  clip-path: polygon(50% -50%, 100% 50%, 50% 150%, 0 50%);
+  transform: translate(-50%, -50%);
+  height: 160px;
+  width: 190px;
+  top: var(--y);
+  left: var(--x);
+  background-color: #efb12c;
+  background-image: linear-gradient(#6a63d9, #4f47b8);
+  box-shadow:
+    12px 0 3px -7px rgba(255,255,255,.18) inset,
+    -12px 0 3px -7px rgba(0,0,0,.22) inset,
+    0 26px 3px -7px rgba(255,255,255,.20) inset,
+    0 -6px 3px -4px rgba(0,0,0,.35) inset;
+
+  transition: transform .09s ease, filter .09s ease, box-shadow .09s ease;
+  cursor: pointer;
+
+  display: grid;
+  place-items: center;
+
+  /* background: linear-gradient(145deg, #4a5fd0, #3b4cb3);
+  transition: 0.09s ease;
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,.25); */
+
 }
 
+
+
+
 .joystick-box {
-    height: 200px;
-    width: 200px;
-    border: solid 1px black
+
+  height: 200px;
+  width: 200px;
+
 }
 
 .chord-key.pressed {
+  border: none;
+  outline: none;
   background-color: #ffda75;
-  transform: scale(0.96);
+  scale: 0.96;
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, .3);
+  background: linear-gradient(145deg, #ffda75, #f2c94c);
+}
+
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+
+}
+
+#mini-synth {
+  background-color: #e2a953;
+  margin-top: 30px;
+  height: 800px;
+  width: 900px;
+   border-radius: 75px;
+      box-shadow:
+    14px 0 3px -7px #e0a54c inset,
+    -14px 0 3px -7px #e09e3a inset,
+    0 32px 3px -7px #d99022 inset,
+    0 -6px 3px -4px #d28613 inset;
+    background-image: linear-gradient(#d99022, #d28613);
+}
+
+#keys {
+  position: relative;
+  height: 50%;
+  width: 100%;
+
+}
+
+#controls {
+  display: flex;
+  flex-direction: row;
+  height: 50%;
+  width: 100%;
+
+}
+
+#controls-1 {
+  padding: 30px;
+  flex: 1;
+
+}
+
+#controls-2 {
+  flex: 1;
+}
+
+#controls-3 {
+  padding: 30px;
+  flex: 1;
+}
+
+
+label {
+  font-size: 24px;
+  font-weight: 500;
+  color: #cfe1f2;
+}
+
+select {
+  appearance: none;
+  padding: 16px 50px 16px 20px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 25px;
+  color: #e2e2e2;
+  cursor: pointer;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%232c3e50" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+#scale-root-select {
+  width: 260px;
+  background-color:#3b4cb3;
+}
+
+
+#scale-type-select {
+  margin-top: 10px;
+  width: 260px;
+  background-color: #3b4cb3;
+}
+
+#instrument-select {
+  margin-top: 10px;
+  width: 260px;
+  background-color: #3b4cb3;
+}
+
+#joystick-direction {
+  padding: 16px 50px 16px 20px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 25px;
+  color: #ffffff;
+  background-position: right 12px center;
+  width: 180px;
+  background-color: #3b4cb3;
 }

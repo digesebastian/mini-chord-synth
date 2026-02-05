@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <head>
   <meta charset="UTF-8" />
   <link rel="stylesheet" href="./mini-chord-synth.css" />
@@ -6,23 +7,48 @@
 </head>
 
 <body>
-  <div id="keys">
-  </div>
-  <div id="guitar-keys"> </div>
+  <div id="mini-synth">
+    <div id="keys">
 
-  <label for="scale-select">Choose a scale:</label>
-  <select name="scales" id="scale-root-select">
-  </select>
-  <select name="scale-types" id="scale-type-select">
-  </select>
-  <br>
-  <br>
-  <label for="instrument-select">Choose an instrument:</label>
-  <select name="instruments" id="instrument-select">
-  </select>
-  <br>
-  <br>
-  <div id="joy-div" class="joystick-box">
+    </div>
+    <div id="controls">
+      <div id="controls-1">
+        <label for="scale-select"></label>
+        <select name="scales" id="scale-root-select">
+
+        </select>
+        <select name="scale-types" id="scale-type-select">
+
+        </select>
+       
+        <label for="instrument-select"></label>
+        <select name="instruments" id="instrument-select">
+
+        </select>
+        
+
+      </div>
+      <div id="controls-2">
+
+      </div>
+      <div id="controls-3">
+        <div id="joy-div" class="joystick-box">
+        </div>
+        Transform: <input id="joystick-direction" disabled type="text" />
+
+      </div>
+
+    </div>
+
   </div>
-  Transform: <input id="joystick-direction" disabled type="text" />
+
+
+
+
+
+
+  <!--<div id="keys">
+  </div>
+  <div id="guitar-keys"> </div>-->
+
 </body>
