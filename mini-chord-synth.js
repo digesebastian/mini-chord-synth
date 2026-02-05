@@ -180,7 +180,7 @@ function changeInstrument(instrument) {
 }
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
-const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
+const chordKeys = ["a", "w", "s", "d", "r", "f", "g"];
 async function handleChordKeyDown(e) {
   if (!isInitialized) {
     await Tone.start()
