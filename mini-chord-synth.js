@@ -58,7 +58,7 @@ const ctxt = new AudioContext();
 // CONTROLLER
 
 function initializeAudioContext() {
-  const gain = new Tone.Gain(0.8).toDestination()
+  const gain = new Tone.Gain(0.4).toDestination()
   const compressor = new Tone.Compressor({
     threshold: -18,
     ratio: 3,
@@ -93,11 +93,9 @@ function getNodeName(semitones) {
 function getChord(scaleDegree) {
   const scale = scales.get(scaleType);
 
-  const baseChord = scale[scaleDegree];
+  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
 
-  const transformedChord = Chord.transformChord(baseChord, chordTransform);
-
-  const chordSemitones = transformedChord.getSemitones()
+  const chordSemitones = chord.getSemitones()
     .map(s => (s + scaleSemitones)) // adjust to current scale
     .map(s => s % 12) // fit all notes in one octave
 
@@ -107,11 +105,11 @@ function getChord(scaleDegree) {
 
   const outputChord = [chordRoot, chordThird, chordFifth]
 
-  if (transformedChord.seventh) {
+  if (chord.seventh !== undefined) {
     outputChord.push(getNodeName(chordSemitones[3]))
   }
 
-  if (transformedChord.ninth) {
+  if (chord.ninth !== undefined) {
     outputChord.push(getNodeName(chordSemitones[4]))
   }
 
@@ -138,8 +136,9 @@ async function play(scaleDegree) {
 }
 
 function releaseChordKey(scaleDegree) {
+  // only release if the currently playing key is released
   if (scaleDegree !== currentlyPlayingStepInScale) {
-    return; // only release if the currently playing key is released
+    return; 
   }
 
   if (currentInstrument === 'Sines') {
@@ -152,13 +151,18 @@ function releaseChordKey(scaleDegree) {
 }
 
 function playSynth(nodes, synth) {
-  if (chordIsPlaying()) {
-    synth.triggerRelease(currentlyPlayingChord); // releases currently playing chord
-  }
   const bass = nodes[0].replace(/4/g, '3');
-  const withBass = [bass].concat(nodes)
-  currentlyPlayingChord = withBass;
-  synth.triggerAttack(withBass);
+  const chord = [bass].concat(nodes)
+
+  let nodesToPlay = chord;
+  if (chordIsPlaying()) {
+    nodesToPlay = nodesToPlay.filter(n => !currentlyPlayingChord.includes(n));
+    const nodesToRelease = currentlyPlayingChord.filter(n => !chord.includes(n));
+    synth.triggerRelease(nodesToRelease); // releases currently playing chord
+  }
+
+  currentlyPlayingChord = chord;
+  synth.triggerAttack(nodesToPlay);
 }
 
 function changeScaleRoot(root) {
@@ -207,11 +211,13 @@ function handleChordKeyUp(e) {
 }
 
 async function handleKeydown(e) {
-  e.preventDefault(); // prevent page scrolling
-    if (e.repeat) {
-      return // ignore keydown if it is fired from holding down a key
-    }
+  if (e.repeat) {
+    // ignore keydown if it is fired from holding down a key
+    e.preventDefault();
+    return
+  }
   if (isKeyForJoystick(e.key)) {
+    e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
     if (chordIsPlaying()) {
