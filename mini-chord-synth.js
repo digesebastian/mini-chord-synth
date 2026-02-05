@@ -55,6 +55,9 @@ let currentlyPlayingStepInScale = null;
 
 const ctxt = new AudioContext();
 
+let waveAnalyser;
+let waveRafId = null;
+
 // CONTROLLER
 
 function initializeAudioContext() {
@@ -65,6 +68,15 @@ function initializeAudioContext() {
     attack: 0.1,
     release: 0.5
   }).connect(gain)
+
+  waveAnalyser = new Tone.Analyser("waveform", 1024);
+
+  // compressor -> gain -> destination (mevcut chain)
+  compressor.connect(gain);
+
+  // ✅ Aynı sinyali analyser'a da gönder (paralel)
+  compressor.connect(waveAnalyser);
+
   sineSynth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
       attack: 0.2,
@@ -362,6 +374,7 @@ async function initializeApp() {
     }
   }, { once: true });
   initializeAudioContext()
+  startWaveVisualizer();
 
   addKeys();
   renderMiniPiano(6,1);  //6,1 since all chords are in 4th octave, so the base is on 3rd octave
@@ -439,5 +452,55 @@ function clearMiniPiano() {
   document.querySelectorAll("#piano .pkey")
     .forEach(k => k.classList.remove("active", "bass"));
 }
+
+function startWaveVisualizer() {
+  const canvas = document.getElementById("waveviz");
+  if (!canvas || !waveAnalyser) return;
+
+  const ctx = canvas.getContext("2d");
+
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || canvas.width;
+  const cssH = canvas.clientHeight || canvas.height;
+
+  // Canvas'ı retina'ya uygun ölçekle
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  function draw() {
+    const w = cssW;
+    const h = cssH;
+
+    // arkaplanı temizle
+    ctx.clearRect(0, 0, w, h);
+
+    // takes waveform data
+    const data = waveAnalyser.getValue(); // Float32Array
+
+    // orta çizgi
+    const mid = h / 2;
+
+    // line settings
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    // soldan sağa çiz
+    for (let i = 0; i < data.length; i++) {
+      const x = (i / (data.length - 1)) * w;
+      const y = mid + data[i] * (h * 0.42);
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    ctx.stroke();
+
+    waveRafId = requestAnimationFrame(draw);
+  }
+  ctx.strokeStyle = "rgba(106,99,255,.9)"; //changing wave colour
+
+  if (waveRafId) cancelAnimationFrame(waveRafId);
+  draw();}
 
 initializeApp();
