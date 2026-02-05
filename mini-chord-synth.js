@@ -1,10 +1,11 @@
-import { scales, scaleNames } from "./scales.js";
+import { scales, scaleNames, scaleMap } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
+import { log } from "tone/build/esm/core/util/Debug.js";
 
 // MODEL
 
@@ -40,6 +41,8 @@ let sineSynth;
 let sawSynth;
 
 let scaleSemitones = 0;
+
+let scaleRootSymbol = 'C';
 
 let scaleType = 0;
 
@@ -90,16 +93,65 @@ function initializeAudioContext() {
 
 function updateScaleChordNames() {
   const scale = scales.get(scaleType);
+  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol);
+
   for (let i = 0; i < 7; i++) {
     const triad = Chord.getTriad(scale, i)
     const chordQuality = Chord.getChordName(triad);
     const shortForm = toShortFormChordQuality(chordQuality);
-    const chordRootSemitones = (triad[0] + scaleSemitones) % 12
-    const chordRootName = NODE_NAMES[chordRootSemitones]
-    scaleChordNames[i] = chordRootName + shortForm
-  } 
+
+    scaleChordNames[i] = scaleToneNames[i] + shortForm
+  }
   updateKeyChordNames();
 }
+
+function getScaleToneNames(scale, scaleRootSymbol) {
+  const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
+
+  const rootSymbolNatural = scaleRootSymbol[0];
+
+  const currentScaleSemitones = scale
+    .map(s => (s + scaleSemitones)) // adjust to current scale
+    .map(s => s % 12) // move notes to same octave
+
+  const indexInCScale = cScale.indexOf(rootSymbolNatural);
+  const cScaleRotated = rotateFromIndex(cScale, indexInCScale)
+  const cScaleSemitonesRotated = rotateFromIndex(cScaleSemitones, indexInCScale)
+
+  let scaleToneNames = [];
+  for (let i = 0; i < 7; i++) {
+    let sign = '';
+    const differenceToCScale = currentScaleSemitones[i] - cScaleSemitonesRotated[i];
+    
+    // the cases of 10, 11, -10, -11 are edge cases when 
+    switch (differenceToCScale) {
+      case 2:
+      case -10:
+        sign = '##';
+        break;
+      case 1:
+      case -11:
+        sign = '#';
+        break;
+      case -1:
+      case 11:
+        sign = 'b';
+        break;
+      case -2:
+      case 10:
+        sign = 'bb'
+        break;
+    }
+    scaleToneNames.push(cScaleRotated[i] + sign);
+  }
+
+  return scaleToneNames;
+}
+const rotateFromIndex = (arr, index) => {
+  const start = index % arr.length;
+  return [...arr.slice(start), ...arr.slice(0, start)];
+};
 
 function toShortFormChordQuality(chordQuality) {
   switch (chordQuality) {
@@ -164,7 +216,7 @@ async function play(scaleDegree) {
 function releaseChordKey(scaleDegree) {
   // only release if the currently playing key is released
   if (scaleDegree !== currentlyPlayingStepInScale) {
-    return; 
+    return;
   }
 
   if (currentInstrument === 'Sines') {
@@ -191,8 +243,9 @@ function playSynth(nodes, synth) {
   synth.triggerAttack(nodesToPlay);
 }
 
-function changeScaleRoot(root) {
-  scaleSemitones = parseInt(root);
+function changeScaleRoot(rootSymbol) {
+  scaleRootSymbol = rootSymbol;
+  scaleSemitones = scaleMap.get(rootSymbol);
   updateScaleChordNames();
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
@@ -298,8 +351,8 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.style.setProperty('--x', positions[i].x+"%");
-    k.style.setProperty('--y', positions[i].y+"%");
+    k.style.setProperty('--x', positions[i].x + "%");
+    k.style.setProperty('--y', positions[i].y + "%");
     k.addEventListener("mousedown", async () => {
       showKeyPressed(i)
       await play(i)
@@ -312,41 +365,20 @@ function addKeys() {
   }
 }
 const positions = [
-  {x: 14, y:50},
-  {x: 32, y:27},
-  {x: 32, y:73},
-  {x: 50, y:50},
-  {x: 68, y:27},
-  {x: 68, y:73},
-  {x: 86, y:50}
+  { x: 14, y: 50 },
+  { x: 32, y: 27 },
+  { x: 32, y: 73 },
+  { x: 50, y: 50 },
+  { x: 68, y: 27 },
+  { x: 68, y: 73 },
+  { x: 86, y: 50 }
 ];
 
 function addScaleRootDropdownOptions() {
-  // scale names and number of semitones above C
-  const scaleMap = new Map([
-    ['C', 0],
-    ['C#', 1],
-    ['Db', 1],
-    ['D', 2],
-    ['D#', 3],
-    ['Eb', 3],
-    ['E', 4],
-    ['F', 5],
-    ['F#', 6],
-    ['Gb', 6],
-    ['G', 7],
-    ['G#', 8],
-    ['Ab', 8],
-    ['A', 9],
-    ['A#', 10],
-    ['Bb', 10],
-    ['B', 11]
-  ]);
-
   const dropdown = document.getElementById("scale-root-select")
-  scaleMap.forEach((v, k) => {
+  scaleMap.forEach((_v, k) => {
     const option = document.createElement("option");
-    option.value = v;
+    option.value = k;
     option.textContent = `root: ${k}`;
     dropdown.appendChild(option)
   })
@@ -368,7 +400,7 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`; 
+    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
     dropdown.appendChild(option)
   }
 }
