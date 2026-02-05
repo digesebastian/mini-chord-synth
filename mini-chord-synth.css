@@ -69,6 +69,8 @@ body {
     0 32px 3px -7px #d99022 inset,
     0 -6px 3px -4px #d28613 inset;
     background-image: linear-gradient(#d99022, #d28613);
+  display: flex;              /* ✅ EKLE */
+  flex-direction: column;     /* ✅ EKLE */
 }
 
 #keys {
@@ -76,6 +78,77 @@ body {
   height: 50%;
   width: 100%;
 
+}
+
+#piano{
+align-self: center; 
+  height: 10%;
+
+  padding: 10px 12px;
+  border-radius: 16px;
+
+  background-image: linear-gradient(#2a2a33, #17171d);
+  box-shadow:
+    14px 0 3px -7px rgba(255,255,255,.06) inset,
+    -14px 0 3px -7px rgba(0,0,0,.25) inset,
+    0 20px 3px -7px rgba(255,255,255,.05) inset,
+    0 -8px 3px -4px rgba(0,0,0,.35) inset;
+
+
+  user-select: none;
+}
+
+.mini-piano{
+  position: relative;
+  display: flex;
+  gap: 2px;
+}
+
+/* white keys */
+.pkey.white{
+  width: 14px;
+  height: 54px;
+  border-radius: 4px;
+  background-image: linear-gradient(#f2f2f6, #d9dae0);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.7) inset,
+    0 -8px 10px rgba(0,0,0,.14) inset;
+}
+
+/* black keys overlay */
+.pkey.black{
+  position: absolute;
+  top: 0;
+  width: 9px;
+  height: 32px;
+  border-radius: 3px;
+  background-image: linear-gradient(#2c2c32, #0b0b10);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.08) inset,
+    0 -8px 10px rgba(0,0,0,.35) inset;
+}
+
+/* active notes */
+.pkey.active{
+  background-image: linear-gradient(#6a63ff, #4a3fd1);
+  box-shadow:
+    0 0 6px rgba(106,99,255,.85),
+    0 0 12px rgba(106,99,255,.35);
+}
+
+.pkey.black.active{
+  background-image: linear-gradient(#6a63ff, #3a33b6);
+}
+
+.pkey.bass{
+  background-image: linear-gradient(#ffda75, #f2c94c);
+  box-shadow:
+    0 0 6px rgba(242,201,76,.75),
+    0 0 12px rgba(242,201,76,.35);
+}
+
+.pkey.black.bass{
+  background-image: linear-gradient(#f2c94c, #b88918);
 }
 
 #controls {
