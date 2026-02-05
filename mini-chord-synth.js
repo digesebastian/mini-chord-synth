@@ -43,6 +43,8 @@ let scaleSemitones = 0;
 
 let scaleType = 0;
 
+let scaleChordNames = new Array(7).fill(null);
+
 let chordTransform = 'None';
 
 let currentInstrument = 'Sines';
@@ -84,6 +86,30 @@ function initializeAudioContext() {
       release: 0.5
     }
   }).connect(compressor);
+}
+
+function updateScaleChordNames() {
+  const scale = scales.get(scaleType);
+  for (let i = 0; i < 7; i++) {
+    const triad = Chord.getTriad(scale, i)
+    const chordQuality = Chord.getChordName(triad);
+    const shortForm = toShortFormChordQuality(chordQuality);
+    const chordRootSemitones = (triad[0] + scaleSemitones) % 12
+    const chordRootName = NODE_NAMES[chordRootSemitones]
+    scaleChordNames[i] = chordRootName + shortForm
+  } 
+  updateKeyChordNames();
+}
+
+function toShortFormChordQuality(chordQuality) {
+  switch (chordQuality) {
+    case 'maj':
+      return '';
+    case 'min':
+      return 'm';
+    default:
+      return chordQuality;
+  }
 }
 
 function getNodeName(semitones) {
@@ -158,7 +184,7 @@ function playSynth(nodes, synth) {
   if (chordIsPlaying()) {
     nodesToPlay = nodesToPlay.filter(n => !currentlyPlayingChord.includes(n));
     const nodesToRelease = currentlyPlayingChord.filter(n => !chord.includes(n));
-    synth.triggerRelease(nodesToRelease); // releases currently playing chord
+    synth.triggerRelease(nodesToRelease);
   }
 
   currentlyPlayingChord = chord;
@@ -167,11 +193,13 @@ function playSynth(nodes, synth) {
 
 function changeScaleRoot(root) {
   scaleSemitones = parseInt(root);
+  updateScaleChordNames();
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(newScale) {
   scaleType = parseInt(newScale);
+  updateScaleChordNames();
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
@@ -194,17 +222,6 @@ async function handleChordKeyDown(e) {
     showKeyPressed(index)
     play(index);
   }
-}
-
-function showKeyPressed(index) {
-  const buttons = document.querySelectorAll(".chord-key");
-  buttons.forEach(btn => btn.classList.remove("pressed"));
-  buttons[index].classList.add("pressed");
-}
-
-function showKeyReleased(index) {
-  const buttons = document.querySelectorAll(".chord-key");
-  buttons[index].classList.remove("pressed");
 }
 
 function handleChordKeyUp(e) {
@@ -258,6 +275,24 @@ function chordIsPlaying() {
 
 // VIEW
 
+function showKeyPressed(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons.forEach(btn => btn.classList.remove("pressed"));
+  buttons[index].classList.add("pressed");
+}
+
+function showKeyReleased(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons[index].classList.remove("pressed");
+}
+
+function updateKeyChordNames() {
+  const keys = document.querySelectorAll(".chord-key");
+  for (let i = 0; i < 7; i++) {
+    keys[i].textContent = scaleChordNames[i];
+  }
+}
+
 function addKeys() {
   const keys = document.getElementById("keys");
   for (let i = 0; i < 7; i++) {
@@ -284,7 +319,6 @@ const positions = [
   {x: 68, y:27},
   {x: 68, y:73},
   {x: 86, y:50}
-
 ];
 
 function addScaleRootDropdownOptions() {
@@ -360,6 +394,7 @@ async function initializeApp() {
   initializeAudioContext()
 
   addKeys();
+  updateScaleChordNames();
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
   addInstrumentDropdownOptions();
