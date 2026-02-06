@@ -50,6 +50,8 @@ let currentlyPlayingChord = null;
 
 let currentlyPlayingStepInScale = null;
 
+const activeChordKeys = new Set();
+
 const ctxt = new AudioContext();
 
 // CONTROLLER
@@ -127,10 +129,15 @@ async function play(scaleDegree) {
   } else if (currentInstrument === 'Sawtooth') {
     playSynth(chordNotes, sawSynth);
   } else if (currentInstrument === 'Guitar') {
-    const chordName = GUITAR_SCALE_CHORDS[scaleDegree];
-    if (chordName) {
-      guitar.strumChord(chordName);
-    }
+    const scale = scales.get(scaleType);
+    const baseChord = scale[scaleDegree];
+    const transformedChord = Chord.transformChord(baseChord, chordTransform);
+
+    const chordSemitones = transformedChord.getSemitones()
+        .filter(s => s !== undefined)
+        .map(s => (s + scaleSemitones));
+
+    guitar.updateChord(chordSemitones);
   }
 }
 
@@ -148,6 +155,12 @@ function releaseChordKey(scaleDegree) {
   currentlyPlayingChord = null;
   currentlyPlayingStepInScale = null;
   clearMiniPiano();
+}
+
+function playSines(nodes) {
+  const bass = nodes[0].replace(/4/g, '3');
+  const withBass = [bass].concat(nodes)
+  sineSynth.triggerAttackRelease(withBass, "4n");
 }
 
 function playSynth(nodes, synth) {
@@ -360,21 +373,25 @@ async function initializeApp() {
   }, { once: true });
   initializeAudioContext()
 
-  addKeys();
-  renderMiniPiano(6,1);  //6,1 since all chords are in 4th octave, so the base is on 3rd octave
-  addScaleRootDropdownOptions();
-  addScaleTypeDropdownOptions();
-  addInstrumentDropdownOptions();
-  addJoystick();
-
-
-  await setupWorklet(ctxt);
-
-    guitar = new Guitar(ctxt);
-    guitar.initializeStrings(); 
-    console.log("Guitar strings initialized:", guitar.strings.length);
+    addKeys();
+    renderMiniPiano(6,1);
+    addScaleRootDropdownOptions();
+    addScaleTypeDropdownOptions();
+    addInstrumentDropdownOptions();
+    addJoystick();
     
-    //addGuitarKeys();
+
+    try {
+      console.log("Starting AudioWorklet setup.");
+      await setupWorklet(ctxt);
+      console.log("AudioWorklet successfully loaded.");
+
+      guitar = new Guitar(ctxt);
+      await guitar.initializeStrings();
+      console.log("Guitar strings initialized");
+    } catch (err) {
+      console.error("error initializing strings:", err);
+    }
 }
 
 // --- MINI PIANO ---
@@ -438,6 +455,5 @@ function clearMiniPiano() {
   document.querySelectorAll("#piano .pkey")
     .forEach(k => k.classList.remove("active", "bass"));
 }
-
 
 initializeApp();
