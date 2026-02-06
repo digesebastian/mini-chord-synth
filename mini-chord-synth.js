@@ -431,7 +431,7 @@ function addInstrumentDropdownOptions() {
 function addJoystick() {
   const joyParams = { 
     "internalFillColor": "#3b4cb3",
-    "internalStrokeColor": "#2a2a33",
+    "internalStrokeColor": "#292563",
     "externalStrokeColor": "#2a2a33",
     "autoReturnToCenter": true,
   }
