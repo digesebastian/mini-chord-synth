@@ -12,26 +12,25 @@
       <canvas id="waveviz" width="520" height="160"></canvas>
     </div>
     <div id="keys">
-
     </div>
     <div id="piano">
     </div>
     <div id="controls">
       <div id="controls-1">
-        <label for="scale-select"></label>
-        <select name="scales" id="scale-root-select">
+        <div class="control-dropdown-container">
+          <div class="control-dropdown-label" id="scale-root-select-label">Root: C</div>
+          <select name="scales" class="control-dropdown-select" id="scale-root-select"></select>
+        </div>
 
-        </select>
-        <select name="scale-types" id="scale-type-select">
+        <div class="control-dropdown-container">
+          <div class="control-dropdown-label" id="scale-type-select-label">Scale: Major</div>
+          <select name="scale-types" class="control-dropdown-select" id="scale-type-select"></select>
+        </div>
 
-        </select>
-       
-        <label for="instrument-select"></label>
-        <select name="instruments" id="instrument-select">
-
-        </select>
-        
-
+        <div class="control-dropdown-container">
+          <div class="control-dropdown-label" id="instrument-select-label">Instrument: Sines</div>
+          <select name="instruments" class="control-dropdown-select" id="instrument-select"></select>
+        </div>
       </div>
       <div id="controls-2">
 
@@ -39,7 +38,7 @@
       <div id="controls-3">
         <div id="joy-div" class="joystick-box">
         </div>
-         <input id="joystick-direction" disabled type="text" />
+        <input id="joystick-direction" disabled type="text" />
 
       </div>
 

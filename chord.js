@@ -14,7 +14,7 @@ export class Chord {
 
     static transformChord(chord, scale, degree,transform) {
         switch (transform) {
-            case 'None':
+            case 'base':
                 break;
             case 'maj/min':
                 if (chord.chordName === 'maj') {

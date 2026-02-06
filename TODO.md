@@ -27,9 +27,9 @@
 [] Add guitar sound
 
 ### Design
-[] Design a layout for the synth  
-[] Add some visualization of the sound  
-[] Add keyboard displaying played notes
+[x] Design a layout for the synth  
+[x] Add some visualization of the sound  
+[x] Add keyboard displaying played notes
 
 ### Documentation
 [] Add documentation
@@ -41,4 +41,3 @@
     [] Functionality to pick range where chords are played
 
 [] Ability to change key bindings
-

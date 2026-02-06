@@ -17,7 +17,7 @@ import { log } from "tone/build/esm/core/util/Debug.js";
 const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 const TRANSFORMATION_MAP = new Map([
-  ['C', 'None'],
+  ['C', 'base'],
   ['N', 'maj/min'],
   ['NE', '7th'],
   ['E', 'maj/min 7th'],
@@ -107,7 +107,7 @@ function initializeAudioContext() {
 
 function updateScaleChordNames() {
   const scale = scales.get(scaleType);
-  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol);
+  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol, scaleSemitones);
 
   for (let i = 0; i < 7; i++) {
     const triad = Chord.getTriad(scale, i)
@@ -119,7 +119,7 @@ function updateScaleChordNames() {
   updateKeyChordNames();
 }
 
-function getScaleToneNames(scale, scaleRootSymbol) {
+function getScaleToneNames(scale, scaleRootSymbol, scaleSemitones) {
   const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
 
@@ -251,12 +251,6 @@ function releaseChordKey(scaleDegree) {
   clearMiniPiano();
 }
 
-function playSines(nodes) {
-  const bass = nodes[0].replace(/4/g, '3');
-  const withBass = [bass].concat(nodes)
-  sineSynth.triggerAttackRelease(withBass, "4n");
-}
-
 function playSynth(nodes, synth) {
   const bass = nodes[0].replace(/4/g, '3');
   const chord = [bass].concat(nodes)
@@ -277,17 +271,20 @@ function changeScaleRoot(rootSymbol) {
   scaleRootSymbol = rootSymbol;
   scaleSemitones = scaleMap.get(rootSymbol);
   updateScaleChordNames();
+  document.getElementById("scale-root-select-label").textContent = "Root: " + rootSymbol;
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(newScale) {
   scaleType = parseInt(newScale);
   updateScaleChordNames();
+  document.getElementById("scale-type-select-label").textContent = "Scale: " + scaleNames.get(scaleType);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
 function changeInstrument(instrument) {
   currentInstrument = instrument;
+  document.getElementById("instrument-select-label").textContent = "Instrument: " + instrument;
 }
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
@@ -327,10 +324,6 @@ async function handleKeydown(e) {
     e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
-    if (chordIsPlaying()) {
-      // update currently playing chord
-      play(currentlyPlayingStepInScale);
-    }
   } else {
     handleChordKeyDown(e)
   }
@@ -409,7 +402,7 @@ function addScaleRootDropdownOptions() {
   scaleMap.forEach((_v, k) => {
     const option = document.createElement("option");
     option.value = k;
-    option.textContent = `root: ${k}`;
+    option.textContent = k;
     dropdown.appendChild(option)
   })
 }
@@ -420,7 +413,7 @@ function addScaleTypeDropdownOptions() {
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
-    option.textContent = `scale: ${scaleNames.get(i)}`;
+    option.textContent = scaleNames.get(i);
     dropdown.appendChild(option)
   }
 }
@@ -430,18 +423,29 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
+    option.textContent = INSTRUMENTS[i];
     dropdown.appendChild(option)
   }
 }
 
 function addJoystick() {
-  const joyParams = { "autoReturnToCenter": false }
+  const joyParams = { 
+    "internalFillColor": "#3b4cb3",
+    "internalStrokeColor": "#2a2a33",
+    "externalStrokeColor": "#2a2a33",
+    "autoReturnToCenter": true,
+  }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
-    joystickDirection.value = chordTransform;
+    if (joystickDirection.value !== chordTransform) {
+      joystickDirection.value = chordTransform;
+      if (chordIsPlaying()) {
+      // update currently playing chord
+      play(currentlyPlayingStepInScale);
+    }
+    }
   });
 }
 
@@ -459,7 +463,7 @@ async function initializeApp() {
   startWaveVisualizer(canvas, waveAnalyser);
 
   addKeys();
-  updateScaleChordNames();
+  updateScaleChordNames();  
   renderMiniPiano(6,  1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
   addScaleRootDropdownOptions();
   addScaleRootDropdownOptions();
