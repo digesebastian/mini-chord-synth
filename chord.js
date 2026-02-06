@@ -95,26 +95,36 @@ export class Chord {
     }
 
     static createChord(scale, degree, transform) {
-        // Using two octaves in order to have the third and fifth above the root
-        // Could probably be done more elegantly
-        const secondOctave = scale.map(num => num + 12);
-        const twoOctaves = scale.concat(secondOctave); 
+        const triad = this.getTriad(scale, degree)
 
-        const root = twoOctaves[degree];
-        const third = twoOctaves[degree + 2];
-        const fifth = twoOctaves[degree + 4];
+        const root = triad[0]
+        const third = triad[1]
+        const fifth = triad[2]       
 
-        let thirdInterval = third - root;
-        let fifthInterval = fifth - root;
-
-        let chordName = this.getChordName(thirdInterval, fifthInterval);
+        let chordName = this.getChordName(triad);
 
         let baseChord = new Chord(chordName, root, third, fifth)
         
         return this.transformChord(baseChord, scale, degree, transform)
     }
 
-    static getChordName(thirdInterval, fifthInterval) {
+    static getTriad(scale, degree) {
+        // Using two octaves in order to have the third and fifth above the root
+        // Could probably be done more elegantly
+        const secondOctave = scale.map(num => num + 12);
+        const twoOctaves = scale.concat(secondOctave); 
+
+        return[
+            twoOctaves[degree], 
+            twoOctaves[degree + 2], 
+            twoOctaves[degree + 4]
+        ];
+    }
+
+    static getChordName(triad) {
+        const thirdInterval = triad[1] - triad[0]
+        const fifthInterval = triad[2] - triad[0]
+
         if (thirdInterval === 4) {
             if (fifthInterval === 7) {
                 return 'maj'
