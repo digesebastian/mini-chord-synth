@@ -166,9 +166,11 @@ body {
 }
 
 #controls-1 {
+  /* border: #0b0b10 1px solid; */
   flex: 1.25;
   place-items: center;
   display: flex;
+  gap: 10px;
   flex-direction: column;
   padding-top: 40px;
 }
@@ -184,33 +186,47 @@ body {
   align-items: center;
 }
 
-select {
-  appearance: none;
+.control-dropdown-container {
+  /* border: #0b0b10 1px solid; */
+  position: relative;
+  width: 250px;
+}
+
+.control-dropdown-label {
+  width: 220px;
+  height: 30px;
   padding: 10px 0px 10px 20px;
-  font-size: 17px;
-  font-weight: 500;
   border-radius: 25px;
+  background-color: #2a2a33;
+
+  display: flex;
+  align-items: center;
+  font-size: 19px;
+  font-weight: 500;
   color: #e2e2e2;
-  cursor: pointer;
+  
+  pointer-events: none; /* Let clicks pass through to the select below */
+
+  /* Draw arrow on dropdown */
   background-image: url('data:image/svg+xml;utf8,<svg fill="%232c3e50" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 12px center;
 }
 
-#scale-root-select {
-  width: 220px;
-  background-color: #2a2a33;
-}
+.control-dropdown-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 10px 0px 10px 20px;
 
-#scale-type-select {
-  margin-top: 10px;
-  width: 220px;
-  background-color: #2a2a33;
-}
+  cursor: pointer;
+  opacity: 0; /* Hidden but clickable */
 
-#instrument-select {
-  margin-top: 10px;
-  width: 220px;
+  font-size: 17px;
+  font-weight: 500;
+  color: #e2e2e2;
   background-color: #2a2a33;
 }
 

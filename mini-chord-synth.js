@@ -17,7 +17,7 @@ import { log } from "tone/build/esm/core/util/Debug.js";
 const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 const TRANSFORMATION_MAP = new Map([
-  ['C', 'None'],
+  ['C', 'base'],
   ['N', 'maj/min'],
   ['NE', '7th'],
   ['E', 'maj/min 7th'],
@@ -271,17 +271,20 @@ function changeScaleRoot(rootSymbol) {
   scaleRootSymbol = rootSymbol;
   scaleSemitones = scaleMap.get(rootSymbol);
   updateScaleChordNames();
+  document.getElementById("scale-root-select-label").textContent = "Root: " + rootSymbol;
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(newScale) {
   scaleType = parseInt(newScale);
   updateScaleChordNames();
+  document.getElementById("scale-type-select-label").textContent = "Scale: " + scaleNames.get(scaleType);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
 function changeInstrument(instrument) {
   currentInstrument = instrument;
+  document.getElementById("instrument-select-label").textContent = "Instrument: " + instrument;
 }
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
@@ -403,7 +406,7 @@ function addScaleRootDropdownOptions() {
   scaleMap.forEach((_v, k) => {
     const option = document.createElement("option");
     option.value = k;
-    option.textContent = `root: ${k}`;
+    option.textContent = k;
     dropdown.appendChild(option)
   })
 }
@@ -414,7 +417,7 @@ function addScaleTypeDropdownOptions() {
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
-    option.textContent = `scale: ${scaleNames.get(i)}`;
+    option.textContent = scaleNames.get(i);
     dropdown.appendChild(option)
   }
 }
@@ -424,7 +427,7 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
+    option.textContent = INSTRUMENTS[i];
     dropdown.appendChild(option)
   }
 }
