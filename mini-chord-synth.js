@@ -458,7 +458,7 @@ async function initializeApp() {
   startWaveVisualizer(canvas, waveAnalyser);
 
   addKeys();
-  updateScaleChordNames();
+  updateScaleChordNames();  
   renderMiniPiano(6,  1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
   addScaleRootDropdownOptions();
   addScaleRootDropdownOptions();
