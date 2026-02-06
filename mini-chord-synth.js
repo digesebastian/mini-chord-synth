@@ -4,6 +4,9 @@ import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
+import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
+import { startWaveVisualizer } from "./wave-visualizer.js";
+
 import * as Tone from "tone";
 import { log } from "tone/build/esm/core/util/Debug.js";
 
@@ -59,6 +62,9 @@ const activeChordKeys = new Set();
 
 const ctxt = new AudioContext();
 
+let waveAnalyser;
+let waveRafId = null;
+
 // CONTROLLER
 
 function initializeAudioContext() {
@@ -69,6 +75,15 @@ function initializeAudioContext() {
     attack: 0.1,
     release: 0.5
   }).connect(gain)
+
+  waveAnalyser = new Tone.Analyser("waveform", 1024);
+
+  // compressor -> gain -> destination
+  compressor.connect(gain);
+
+  // send the signal to analyser
+  compressor.connect(waveAnalyser);
+
   sineSynth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
       attack: 0.2,
@@ -440,9 +455,13 @@ async function initializeApp() {
   }, { once: true });
   initializeAudioContext()
 
+  const canvas = document.getElementById("waveviz");
+  startWaveVisualizer(canvas, waveAnalyser);
+
   addKeys();
   updateScaleChordNames();
-  renderMiniPiano(6, 1);
+  renderMiniPiano(6,  1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  addScaleRootDropdownOptions();
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
   addInstrumentDropdownOptions();
@@ -454,74 +473,12 @@ async function initializeApp() {
     await setupWorklet(ctxt);
     console.log("AudioWorklet successfully loaded.");
 
-    guitar = new Guitar(ctxt);
+  guitar = new Guitar(ctxt);
     await guitar.initializeStrings();
     console.log("Guitar strings initialized");
   } catch (err) {
     console.error("error initializing strings:", err);
   }
-}
-
-// --- MINI PIANO ---
-function renderMiniPiano(octaves = 2, baseOctave = 4) {
-  const piano = document.getElementById("piano");
-  if (!piano) return;
-
-  piano.innerHTML = "";
-
-  const wrap = document.createElement("div");
-  wrap.className = "mini-piano";
-  piano.appendChild(wrap);
-
-  const WHITE = ["C", "D", "E", "F", "G", "A", "B"];
-  const BLACK_AFTER_WHITE = { C: "C#", D: "D#", F: "F#", G: "G#", A: "A#" };
-
-  const whiteW = 14, gap = 2, step = whiteW + gap;
-  let whiteIndex = 0;
-
-  for (let o = 0; o < octaves; o++) {
-    const octave = baseOctave + o;
-
-    for (const w of WHITE) {
-      const el = document.createElement("div");
-      el.className = "pkey white";
-      el.dataset.note = `${w}${octave}`;   // C4 ... B4, C5 ... B5
-      wrap.appendChild(el);
-
-      const bName = BLACK_AFTER_WHITE[w];
-      if (bName) {
-        const b = document.createElement("div");
-        b.className = "pkey black";
-        b.dataset.note = `${bName}${octave}`; // C#4 ...
-        b.style.left = `${(whiteIndex + 1) * step - 5}px`;
-        wrap.appendChild(b);
-      }
-
-      whiteIndex++;
-    }
-  }
-}
-
-function setMiniPianoActive(notesWithOctave) {
-  // notesWithOctave ["C3","C4","E4","G4"...] 
-  document.querySelectorAll("#piano .pkey")
-    .forEach(k => k.classList.remove("active", "bass"));
-
-  if (!notesWithOctave?.length) return;
-
-  const [bass, ...chord] = notesWithOctave;
-
-  const bassEl = document.querySelector(`#piano .pkey[data-note="${bass}"]`);
-  if (bassEl) bassEl.classList.add("bass");
-
-  chord.forEach(note => {
-    const el = document.querySelector(`#piano .pkey[data-note="${note}"]`);
-    if (el) el.classList.add("active");
-  });
-}
-function clearMiniPiano() {
-  document.querySelectorAll("#piano .pkey")
-    .forEach(k => k.classList.remove("active", "bass"));
 }
 
 initializeApp();
