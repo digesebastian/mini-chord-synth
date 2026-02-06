@@ -122,24 +122,24 @@ function getScaleToneNames(scale, scaleRootSymbol) {
   let scaleToneNames = [];
   for (let i = 0; i < 7; i++) {
     let sign = '';
-    const differenceToCScale = currentScaleSemitones[i] - cScaleSemitonesRotated[i];
+
+    // modular arithmetic
+    const a = currentScaleSemitones[i];
+    const b = cScaleSemitonesRotated[i];
+    const P = 12;
+    const differenceToCScale = ((((a - b) + (P / 2)) % P) + P) % P - (P / 2)
     
-    // the cases of 10, 11, -10, -11 are edge cases when 
     switch (differenceToCScale) {
       case 2:
-      case -10:
         sign = '##';
         break;
       case 1:
-      case -11:
         sign = '#';
         break;
       case -1:
-      case 11:
         sign = 'b';
         break;
       case -2:
-      case 10:
         sign = 'bb'
         break;
     }
@@ -148,6 +148,7 @@ function getScaleToneNames(scale, scaleRootSymbol) {
 
   return scaleToneNames;
 }
+
 const rotateFromIndex = (arr, index) => {
   const start = index % arr.length;
   return [...arr.slice(start), ...arr.slice(0, start)];
