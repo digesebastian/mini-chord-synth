@@ -324,10 +324,6 @@ async function handleKeydown(e) {
     e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
-    if (chordIsPlaying()) {
-      // update currently playing chord
-      play(currentlyPlayingStepInScale);
-    }
   } else {
     handleChordKeyDown(e)
   }
@@ -435,15 +431,21 @@ function addInstrumentDropdownOptions() {
 function addJoystick() {
   const joyParams = { 
     "internalFillColor": "#3b4cb3",
-    "internalStrokeColor": "#040404b2",
-    "externalStrokeColor": "#040404b2",
-    "autoReturnToCenter": true 
+    "internalStrokeColor": "#2a2a33",
+    "externalStrokeColor": "#2a2a33",
+    "autoReturnToCenter": true,
   }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
-    joystickDirection.value = chordTransform;
+    if (joystickDirection.value !== chordTransform) {
+      joystickDirection.value = chordTransform;
+      if (chordIsPlaying()) {
+      // update currently playing chord
+      play(currentlyPlayingStepInScale);
+    }
+    }
   });
 }
 
