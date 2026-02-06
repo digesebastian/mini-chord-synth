@@ -130,12 +130,12 @@ async function play(scaleDegree) {
     playSynth(chordNotes, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     const scale = scales.get(scaleType);
-    const baseChord = scale[scaleDegree];
-    const transformedChord = Chord.transformChord(baseChord, chordTransform);
 
-    const chordSemitones = transformedChord.getSemitones()
-        .filter(s => s !== undefined)
-        .map(s => (s + scaleSemitones));
+    const chord = Chord.createChord(scale, scaleDegree, chordTransform);
+
+    const chordSemitones = chord.getSemitones()
+      .map(s => (s + scaleSemitones)) // adjust to current scale
+      .map(s => s % 12)
 
     guitar.updateChord(chordSemitones);
   }
@@ -144,7 +144,7 @@ async function play(scaleDegree) {
 function releaseChordKey(scaleDegree) {
   // only release if the currently playing key is released
   if (scaleDegree !== currentlyPlayingStepInScale) {
-    return; 
+    return;
   }
 
   if (currentInstrument === 'Sines') {
@@ -277,8 +277,8 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.style.setProperty('--x', positions[i].x+"%");
-    k.style.setProperty('--y', positions[i].y+"%");
+    k.style.setProperty('--x', positions[i].x + "%");
+    k.style.setProperty('--y', positions[i].y + "%");
     k.addEventListener("mousedown", async () => {
       showKeyPressed(i)
       await play(i)
@@ -291,13 +291,13 @@ function addKeys() {
   }
 }
 const positions = [
-  {x: 14, y:50},
-  {x: 32, y:27},
-  {x: 32, y:73},
-  {x: 50, y:50},
-  {x: 68, y:27},
-  {x: 68, y:73},
-  {x: 86, y:50}
+  { x: 14, y: 50 },
+  { x: 32, y: 27 },
+  { x: 32, y: 73 },
+  { x: 50, y: 50 },
+  { x: 68, y: 27 },
+  { x: 68, y: 73 },
+  { x: 86, y: 50 }
 
 ];
 
@@ -348,7 +348,7 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`; 
+    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
     dropdown.appendChild(option)
   }
 }
@@ -373,25 +373,25 @@ async function initializeApp() {
   }, { once: true });
   initializeAudioContext()
 
-    addKeys();
-    renderMiniPiano(6,1);
-    addScaleRootDropdownOptions();
-    addScaleTypeDropdownOptions();
-    addInstrumentDropdownOptions();
-    addJoystick();
-    
+  addKeys();
+  renderMiniPiano(6, 1);
+  addScaleRootDropdownOptions();
+  addScaleTypeDropdownOptions();
+  addInstrumentDropdownOptions();
+  addJoystick();
 
-    try {
-      console.log("Starting AudioWorklet setup.");
-      await setupWorklet(ctxt);
-      console.log("AudioWorklet successfully loaded.");
 
-      guitar = new Guitar(ctxt);
-      await guitar.initializeStrings();
-      console.log("Guitar strings initialized");
-    } catch (err) {
-      console.error("error initializing strings:", err);
-    }
+  try {
+    console.log("Starting AudioWorklet setup.");
+    await setupWorklet(ctxt);
+    console.log("AudioWorklet successfully loaded.");
+
+    guitar = new Guitar(ctxt);
+    await guitar.initializeStrings();
+    console.log("Guitar strings initialized");
+  } catch (err) {
+    console.error("error initializing strings:", err);
+  }
 }
 
 // --- MINI PIANO ---
@@ -405,8 +405,8 @@ function renderMiniPiano(octaves = 2, baseOctave = 4) {
   wrap.className = "mini-piano";
   piano.appendChild(wrap);
 
-  const WHITE = ["C","D","E","F","G","A","B"];
-  const BLACK_AFTER_WHITE = { C:"C#", D:"D#", F:"F#", G:"G#", A:"A#" };
+  const WHITE = ["C", "D", "E", "F", "G", "A", "B"];
+  const BLACK_AFTER_WHITE = { C: "C#", D: "D#", F: "F#", G: "G#", A: "A#" };
 
   const whiteW = 14, gap = 2, step = whiteW + gap;
   let whiteIndex = 0;
