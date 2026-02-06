@@ -4,6 +4,9 @@ import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
+import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
+import { startWaveVisualizer } from "./wave-visualizer.js";
+
 import * as Tone from "tone";
 
 // MODEL
@@ -71,10 +74,10 @@ function initializeAudioContext() {
 
   waveAnalyser = new Tone.Analyser("waveform", 1024);
 
-  // compressor -> gain -> destination (mevcut chain)
+  // compressor -> gain -> destination
   compressor.connect(gain);
 
-  // ✅ Aynı sinyali analyser'a da gönder (paralel)
+  // send the signal to analyser
   compressor.connect(waveAnalyser);
 
   sineSynth = new Tone.PolySynth(Tone.Synth, {
@@ -152,7 +155,7 @@ async function play(scaleDegree) {
 function releaseChordKey(scaleDegree) {
   // only release if the currently playing key is released
   if (scaleDegree !== currentlyPlayingStepInScale) {
-    return; 
+    return;
   }
 
   if (currentInstrument === 'Sines') {
@@ -279,8 +282,8 @@ function addKeys() {
   for (let i = 0; i < 7; i++) {
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.style.setProperty('--x', positions[i].x+"%");
-    k.style.setProperty('--y', positions[i].y+"%");
+    k.style.setProperty('--x', positions[i].x + "%");
+    k.style.setProperty('--y', positions[i].y + "%");
     k.addEventListener("mousedown", async () => {
       showKeyPressed(i)
       await play(i)
@@ -293,13 +296,13 @@ function addKeys() {
   }
 }
 const positions = [
-  {x: 14, y:50},
-  {x: 32, y:27},
-  {x: 32, y:73},
-  {x: 50, y:50},
-  {x: 68, y:27},
-  {x: 68, y:73},
-  {x: 86, y:50}
+  { x: 14, y: 50 },
+  { x: 32, y: 27 },
+  { x: 32, y: 73 },
+  { x: 50, y: 50 },
+  { x: 68, y: 27 },
+  { x: 68, y: 73 },
+  { x: 86, y: 50 }
 
 ];
 
@@ -350,7 +353,7 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`; 
+    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
     dropdown.appendChild(option)
   }
 }
@@ -374,10 +377,12 @@ async function initializeApp() {
     }
   }, { once: true });
   initializeAudioContext()
-  startWaveVisualizer();
+
+  const canvas = document.getElementById("waveviz");
+  startWaveVisualizer(canvas, waveAnalyser);
 
   addKeys();
-  renderMiniPiano(6,1);  //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  renderMiniPiano(6, 1);  //6,1 since all chords are in 4th octave, so the base is on 3rd octave
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
   addInstrumentDropdownOptions();
@@ -389,118 +394,5 @@ async function initializeApp() {
   guitar = new Guitar(ctxt);
   guitar.initializeStrings();
 }
-
-
-// --- MINI PIANO ---
-function renderMiniPiano(octaves = 2, baseOctave = 4) {
-  const piano = document.getElementById("piano");
-  if (!piano) return;
-
-  piano.innerHTML = "";
-
-  const wrap = document.createElement("div");
-  wrap.className = "mini-piano";
-  piano.appendChild(wrap);
-
-  const WHITE = ["C","D","E","F","G","A","B"];
-  const BLACK_AFTER_WHITE = { C:"C#", D:"D#", F:"F#", G:"G#", A:"A#" };
-
-  const whiteW = 14, gap = 2, step = whiteW + gap;
-  let whiteIndex = 0;
-
-  for (let o = 0; o < octaves; o++) {
-    const octave = baseOctave + o;
-
-    for (const w of WHITE) {
-      const el = document.createElement("div");
-      el.className = "pkey white";
-      el.dataset.note = `${w}${octave}`;   // C4 ... B4, C5 ... B5
-      wrap.appendChild(el);
-
-      const bName = BLACK_AFTER_WHITE[w];
-      if (bName) {
-        const b = document.createElement("div");
-        b.className = "pkey black";
-        b.dataset.note = `${bName}${octave}`; // C#4 ...
-        b.style.left = `${(whiteIndex + 1) * step - 5}px`;
-        wrap.appendChild(b);
-      }
-
-      whiteIndex++;
-    }
-  }
-}
-
-function setMiniPianoActive(notesWithOctave) {
-  // notesWithOctave ["C3","C4","E4","G4"...] 
-  document.querySelectorAll("#piano .pkey")
-    .forEach(k => k.classList.remove("active", "bass"));
-
-  if (!notesWithOctave?.length) return;
-
-  const [bass, ...chord] = notesWithOctave;
-
-  const bassEl = document.querySelector(`#piano .pkey[data-note="${bass}"]`);
-  if (bassEl) bassEl.classList.add("bass");
-
-  chord.forEach(note => {
-    const el = document.querySelector(`#piano .pkey[data-note="${note}"]`);
-    if (el) el.classList.add("active");
-  });
-}
-function clearMiniPiano() {
-  document.querySelectorAll("#piano .pkey")
-    .forEach(k => k.classList.remove("active", "bass"));
-}
-
-function startWaveVisualizer() {
-  const canvas = document.getElementById("waveviz");
-  if (!canvas || !waveAnalyser) return;
-
-  const ctx = canvas.getContext("2d");
-
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = canvas.clientWidth || canvas.width;
-  const cssH = canvas.clientHeight || canvas.height;
-
-  // Canvas'ı retina'ya uygun ölçekle
-  canvas.width = Math.floor(cssW * dpr);
-  canvas.height = Math.floor(cssH * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  function draw() {
-    const w = cssW;
-    const h = cssH;
-
-    // arkaplanı temizle
-    ctx.clearRect(0, 0, w, h);
-
-    // takes waveform data
-    const data = waveAnalyser.getValue(); // Float32Array
-
-    // orta çizgi
-    const mid = h / 2;
-
-    // line settings
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    // soldan sağa çiz
-    for (let i = 0; i < data.length; i++) {
-      const x = (i / (data.length - 1)) * w;
-      const y = mid + data[i] * (h * 0.42);
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    ctx.stroke();
-
-    waveRafId = requestAnimationFrame(draw);
-  }
-  ctx.strokeStyle = "rgba(106,99,255,.9)"; //changing wave colour
-
-  if (waveRafId) cancelAnimationFrame(waveRafId);
-  draw();}
 
 initializeApp();
