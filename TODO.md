@@ -16,7 +16,7 @@
 ### Chords
 [x] Add 1 chord extension
     [x] Add remaining chord extensions  
-    [] Remove root from 7th chords and root+5th from 9th chords  
+    [x] Remove root from 9th chords  
     [x] Refactor to allow chords to remain in scale
 [x] Fit all chords of scale within one octave  
 
