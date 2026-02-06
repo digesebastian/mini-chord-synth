@@ -107,7 +107,7 @@ function initializeAudioContext() {
 
 function updateScaleChordNames() {
   const scale = scales.get(scaleType);
-  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol);
+  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol, scaleSemitones);
 
   for (let i = 0; i < 7; i++) {
     const triad = Chord.getTriad(scale, i)
@@ -119,7 +119,7 @@ function updateScaleChordNames() {
   updateKeyChordNames();
 }
 
-function getScaleToneNames(scale, scaleRootSymbol) {
+function getScaleToneNames(scale, scaleRootSymbol, scaleSemitones) {
   const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
 
@@ -249,12 +249,6 @@ function releaseChordKey(scaleDegree) {
   currentlyPlayingChord = null;
   currentlyPlayingStepInScale = null;
   clearMiniPiano();
-}
-
-function playSines(nodes) {
-  const bass = nodes[0].replace(/4/g, '3');
-  const withBass = [bass].concat(nodes)
-  sineSynth.triggerAttackRelease(withBass, "4n");
 }
 
 function playSynth(nodes, synth) {
