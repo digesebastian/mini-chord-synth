@@ -430,7 +430,12 @@ function addInstrumentDropdownOptions() {
 }
 
 function addJoystick() {
-  const joyParams = { "autoReturnToCenter": false }
+  const joyParams = { 
+    "internalFillColor": "#3b4cb3",
+    "internalStrokeColor": "#040404b2",
+    "externalStrokeColor": "#040404b2",
+    "autoReturnToCenter": true 
+  }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
