@@ -1,10 +1,11 @@
-import { scales, scaleNames } from "./scales.js";
+import { scales, scaleNames, scaleMap } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
 import * as Tone from "tone";
+import { log } from "tone/build/esm/core/util/Debug.js";
 
 // MODEL
 
@@ -38,7 +39,11 @@ let sawSynth;
 
 let scaleSemitones = 0;
 
+let scaleRootSymbol = 'C';
+
 let scaleType = 0;
+
+let scaleChordNames = new Array(7).fill(null);
 
 let chordTransform = 'None';
 
@@ -83,6 +88,80 @@ function initializeAudioContext() {
       release: 0.5
     }
   }).connect(compressor);
+}
+
+function updateScaleChordNames() {
+  const scale = scales.get(scaleType);
+  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol);
+
+  for (let i = 0; i < 7; i++) {
+    const triad = Chord.getTriad(scale, i)
+    const chordQuality = Chord.getChordName(triad);
+    const shortForm = toShortFormChordQuality(chordQuality);
+
+    scaleChordNames[i] = scaleToneNames[i] + shortForm
+  }
+  updateKeyChordNames();
+}
+
+function getScaleToneNames(scale, scaleRootSymbol) {
+  const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
+
+  const rootSymbolNatural = scaleRootSymbol[0];
+
+  const currentScaleSemitones = scale
+    .map(s => (s + scaleSemitones)) // adjust to current scale
+    .map(s => s % 12) // move notes to same octave
+
+  const indexInCScale = cScale.indexOf(rootSymbolNatural);
+  const cScaleRotated = rotateFromIndex(cScale, indexInCScale)
+  const cScaleSemitonesRotated = rotateFromIndex(cScaleSemitones, indexInCScale)
+
+  let scaleToneNames = [];
+  for (let i = 0; i < 7; i++) {
+    let sign = '';
+
+    // modular arithmetic
+    const a = currentScaleSemitones[i];
+    const b = cScaleSemitonesRotated[i];
+    const P = 12;
+    const differenceToCScale = ((((a - b) + (P / 2)) % P) + P) % P - (P / 2)
+    
+    switch (differenceToCScale) {
+      case 2:
+        sign = '##';
+        break;
+      case 1:
+        sign = '#';
+        break;
+      case -1:
+        sign = 'b';
+        break;
+      case -2:
+        sign = 'bb'
+        break;
+    }
+    scaleToneNames.push(cScaleRotated[i] + sign);
+  }
+
+  return scaleToneNames;
+}
+
+const rotateFromIndex = (arr, index) => {
+  const start = index % arr.length;
+  return [...arr.slice(start), ...arr.slice(0, start)];
+};
+
+function toShortFormChordQuality(chordQuality) {
+  switch (chordQuality) {
+    case 'maj':
+      return '';
+    case 'min':
+      return 'm';
+    default:
+      return chordQuality;
+  }
 }
 
 function getNodeName(semitones) {
@@ -171,7 +250,7 @@ function playSynth(nodes, synth) {
   if (chordIsPlaying()) {
     nodesToPlay = nodesToPlay.filter(n => !currentlyPlayingChord.includes(n));
     const nodesToRelease = currentlyPlayingChord.filter(n => !chord.includes(n));
-    synth.triggerRelease(nodesToRelease); // releases currently playing chord
+    synth.triggerRelease(nodesToRelease);
   }
 
   currentlyPlayingChord = chord;
@@ -179,13 +258,16 @@ function playSynth(nodes, synth) {
   synth.triggerAttack(nodesToPlay);
 }
 
-function changeScaleRoot(root) {
-  scaleSemitones = parseInt(root);
+function changeScaleRoot(rootSymbol) {
+  scaleRootSymbol = rootSymbol;
+  scaleSemitones = scaleMap.get(rootSymbol);
+  updateScaleChordNames();
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(newScale) {
   scaleType = parseInt(newScale);
+  updateScaleChordNames();
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
@@ -194,7 +276,7 @@ function changeInstrument(instrument) {
 }
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
-const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
+const chordKeys = ["a", "w", "s", "d", "r", "f", "g"];
 async function handleChordKeyDown(e) {
   if (!isInitialized) {
     await Tone.start()
@@ -208,17 +290,6 @@ async function handleChordKeyDown(e) {
     showKeyPressed(index)
     play(index);
   }
-}
-
-function showKeyPressed(index) {
-  const buttons = document.querySelectorAll(".chord-key");
-  buttons.forEach(btn => btn.classList.remove("pressed"));
-  buttons[index].classList.add("pressed");
-}
-
-function showKeyReleased(index) {
-  const buttons = document.querySelectorAll(".chord-key");
-  buttons[index].classList.remove("pressed");
 }
 
 function handleChordKeyUp(e) {
@@ -272,6 +343,24 @@ function chordIsPlaying() {
 
 // VIEW
 
+function showKeyPressed(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons.forEach(btn => btn.classList.remove("pressed"));
+  buttons[index].classList.add("pressed");
+}
+
+function showKeyReleased(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons[index].classList.remove("pressed");
+}
+
+function updateKeyChordNames() {
+  const keys = document.querySelectorAll(".chord-key");
+  for (let i = 0; i < 7; i++) {
+    keys[i].textContent = scaleChordNames[i];
+  }
+}
+
 function addKeys() {
   const keys = document.getElementById("keys");
   for (let i = 0; i < 7; i++) {
@@ -298,35 +387,13 @@ const positions = [
   { x: 68, y: 27 },
   { x: 68, y: 73 },
   { x: 86, y: 50 }
-
 ];
 
 function addScaleRootDropdownOptions() {
-  // scale names and number of semitones above C
-  const scaleMap = new Map([
-    ['C', 0],
-    ['C#', 1],
-    ['Db', 1],
-    ['D', 2],
-    ['D#', 3],
-    ['Eb', 3],
-    ['E', 4],
-    ['F', 5],
-    ['F#', 6],
-    ['Gb', 6],
-    ['G', 7],
-    ['G#', 8],
-    ['Ab', 8],
-    ['A', 9],
-    ['A#', 10],
-    ['Bb', 10],
-    ['B', 11]
-  ]);
-
   const dropdown = document.getElementById("scale-root-select")
-  scaleMap.forEach((v, k) => {
+  scaleMap.forEach((_v, k) => {
     const option = document.createElement("option");
-    option.value = v;
+    option.value = k;
     option.textContent = `root: ${k}`;
     dropdown.appendChild(option)
   })
@@ -374,6 +441,7 @@ async function initializeApp() {
   initializeAudioContext()
 
   addKeys();
+  updateScaleChordNames();
   renderMiniPiano(6, 1);
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
