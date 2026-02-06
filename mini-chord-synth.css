@@ -77,7 +77,6 @@ body {
   height: 80px;
   display: block;
   border-radius: 18px;
-  background: black;
 }
 
 #keys {
@@ -89,12 +88,11 @@ body {
 
 #piano {
   align-self: center;
-  height: 10%;
+  height: 8%;
 
   padding: 10px 12px;
   border-radius: 16px;
-
-  background-image: linear-gradient(#2a2a33, #17171d);
+  background-color: #2a2a33;
   box-shadow:
     14px 0 3px -7px rgba(255, 255, 255, .06) inset,
     -14px 0 3px -7px rgba(0, 0, 0, .25) inset,
@@ -196,7 +194,7 @@ body {
   width: 220px;
   height: 30px;
   padding: 10px 0px 10px 20px;
-  border-radius: 25px;
+  border-radius: 16px;
   background-color: #2a2a33;
 
   display: flex;
