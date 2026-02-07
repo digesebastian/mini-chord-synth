@@ -24,7 +24,7 @@
 [x] Make some default sound 
 [x] Improve the sound  
 [x] Make it possible to choose different sounds  
-[] Add guitar sound
+[x] Add guitar sound
 
 ### Design
 [x] Design a layout for the synth  
@@ -37,7 +37,11 @@
 
 ## Nice to have:
 
-[] Keyboard visualizer  
+[x] Keyboard visualizer  
     [] Functionality to pick range where chords are played
 
 [] Ability to change key bindings
+
+## Bugs:
+
+[] pointer-up events are a little buggy, when clicking/touching a key and moving out of the area of the key. Joystick also listens globally for mouseup events.
