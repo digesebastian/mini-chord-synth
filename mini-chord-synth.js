@@ -204,6 +204,9 @@ async function play(scaleDegree) {
     playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     guitar.updateChord(chordSemitones);
+    guitar.updateScale(
+      scale.map(s => (s + scaleSemitones) % 12)
+    );
   }
 }
 
@@ -217,6 +220,8 @@ function releaseChordKey(scaleDegree) {
     sineSynth.triggerRelease(currentlyPlayingChord);
   } else if (currentInstrument === 'Sawtooth') {
     sawSynth.triggerRelease(currentlyPlayingChord);
+  } if (currentInstrument === 'Guitar' && guitar) {
+    guitar.stop();
   }
   currentlyPlayingChord = null;
   currentlyPlayingStepInScale = null;
