@@ -364,11 +364,11 @@ function addKeys() {
     
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.addEventListener("mousedown", async () => {
+    k.addEventListener("pointerdown", async () => {
       showKeyPressed(i)
       await play(i)
     })
-    k.addEventListener("mouseup", () => {
+    k.addEventListener("pointerup", () => {
       showKeyReleased(i)
       releaseChordKey(i)
     })
