@@ -160,7 +160,7 @@ export var JoyStick = (function(container, parameters, callback)
         if((movedY+internalRadius) > canvas.height) { movedY = canvas.height-(maxMoveStick); }
         context.arc(movedX, movedY, internalRadius, 0, circumference, false);
         // create radial gradient
-        var grd = context.createRadialGradient(centerX, centerY, 5, centerX, centerY, 200);
+        var grd = context.createRadialGradient(centerX, centerY, 50, centerX, centerY, 200);
         // Light color
         grd.addColorStop(0, internalFillColor);
         // Dark color

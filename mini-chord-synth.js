@@ -2,14 +2,12 @@ import { scales, scaleNames, scaleMap } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
-import { Guitar } from "./guitar.js";
-import { setupWorklet } from "./guitar.js";
+import { Guitar, setupWorklet } from "./guitar.js";
 import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
 import { startWaveVisualizer } from "./wave-visualizer.js";
 import { renderMiniGuitar,  clearMiniGuitar, setMiniGuitarFromFrets } from "./mini-guitar.js";
 
-import * as Tone from "tone";
-import { log } from "tone/build/esm/core/util/Debug.js";
+import * as Tone from 'https://esm.sh/tone';
 
 // MODEL
 
@@ -18,7 +16,7 @@ import { log } from "tone/build/esm/core/util/Debug.js";
 const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 const TRANSFORMATION_MAP = new Map([
-  ['C', 'None'],
+  ['C', 'base'],
   ['N', 'maj/min'],
   ['NE', '7th'],
   ['E', 'maj/min 7th'],
@@ -49,7 +47,7 @@ let scaleType = 0;
 
 let scaleChordNames = new Array(7).fill(null);
 
-let chordTransform = 'None';
+let chordTransform = 'base';
 
 let currentInstrument = 'Sines';
 
@@ -108,7 +106,7 @@ function initializeAudioContext() {
 
 function updateScaleChordNames() {
   const scale = scales.get(scaleType);
-  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol);
+  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol, scaleSemitones);
 
   for (let i = 0; i < 7; i++) {
     const triad = Chord.getTriad(scale, i)
@@ -120,7 +118,7 @@ function updateScaleChordNames() {
   updateKeyChordNames();
 }
 
-function getScaleToneNames(scale, scaleRootSymbol) {
+function getScaleToneNames(scale, scaleRootSymbol, scaleSemitones) {
   const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
 
@@ -184,32 +182,6 @@ function getNodeName(semitones) {
   return NODE_NAMES[semitones] + '4'
 }
 
-function getChord(scaleDegree) {
-  const scale = scales.get(scaleType);
-
-  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
-
-  const chordSemitones = chord.getSemitones()
-    .map(s => (s + scaleSemitones)) // adjust to current scale
-    .map(s => s % 12) // fit all notes in one octave
-
-  const chordRoot = getNodeName(chordSemitones[0])
-  const chordThird = getNodeName(chordSemitones[1])
-  const chordFifth = getNodeName(chordSemitones[2])
-
-  const outputChord = [chordRoot, chordThird, chordFifth]
-
-  if (chord.seventh !== undefined) {
-    outputChord.push(getNodeName(chordSemitones[3]))
-  }
-
-  if (chord.ninth !== undefined) {
-    outputChord.push(getNodeName(chordSemitones[4]))
-  }
-
-  return outputChord
-}
-
 async function play(scaleDegree) {
   if (!isInitialized) {
     await Tone.start()
@@ -217,23 +189,26 @@ async function play(scaleDegree) {
   }
   currentlyPlayingStepInScale = scaleDegree;
 
-  const chordNotes = getChord(scaleDegree);
+  const scale = scales.get(scaleType)
+
+  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
+
+  const chordSemitones = chord.getSemitones()
+    .filter(s => s !== undefined)
+    .map(s => (s + scaleSemitones)) // adjust to current scale
+    .map(s => s % 12) // fit all notes in one octave
 
   if (currentInstrument === 'Sines') {
-    playSynth(chordNotes, sineSynth);
+    playSynth(chordSemitones, sineSynth);
   } else if (currentInstrument === 'Sawtooth') {
-    playSynth(chordNotes, sawSynth);
+    playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
-    const scale = scales.get(scaleType);
-    const chord = Chord.createChord(scale, scaleDegree, chordTransform);
-
-    const chordSemitones = chord.getSemitones()
-      .map(s => (s + scaleSemitones)) // adjust to current scale
-      .map(s => s % 12)
-
     const frets = guitar.calculateTriadFrets(chordSemitones, 12, 5);
     setMiniGuitarFromFrets(frets, chordSemitones[0], Guitar.OPEN_STRING_PITCH);
     guitar.updateChord(chordSemitones);
+    guitar.updateScale(
+      scale.map(s => (s + scaleSemitones) % 12)
+    );
   }
 }
 
@@ -247,6 +222,8 @@ function releaseChordKey(scaleDegree) {
     sineSynth.triggerRelease(currentlyPlayingChord);
   } else if (currentInstrument === 'Sawtooth') {
     sawSynth.triggerRelease(currentlyPlayingChord);
+  } if (currentInstrument === 'Guitar' && guitar) {
+    guitar.stop();
   }
   currentlyPlayingChord = null;
   currentlyPlayingStepInScale = null;
@@ -258,14 +235,17 @@ function releaseChordKey(scaleDegree) {
   }
 }
 
-function playSines(nodes) {
-  const bass = nodes[0].replace(/4/g, '3');
-  const withBass = [bass].concat(nodes)
-  sineSynth.triggerAttackRelease(withBass, "4n");
-}
+function playSynth(semitones, synth) {
+  const nodes = semitones.map(s => getNodeName(s))
 
-function playSynth(nodes, synth) {
-  const bass = nodes[0].replace(/4/g, '3');
+  const root = nodes[0];
+
+  if (nodes.length > 4) {
+    // remove root to avoid cluttered chords
+    nodes.shift();
+  }
+
+  const bass = root.replace(/4/g, '3');
   const chord = [bass].concat(nodes)
 
   let nodesToPlay = chord;
@@ -284,12 +264,14 @@ function changeScaleRoot(rootSymbol) {
   scaleRootSymbol = rootSymbol;
   scaleSemitones = scaleMap.get(rootSymbol);
   updateScaleChordNames();
+  document.getElementById("scale-root-select-label").textContent = "Root: " + rootSymbol;
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(newScale) {
   scaleType = parseInt(newScale);
   updateScaleChordNames();
+  document.getElementById("scale-type-select-label").textContent = "Scale: " + scaleNames.get(scaleType);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
@@ -336,10 +318,6 @@ async function handleKeydown(e) {
     e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
-    if (chordIsPlaying()) {
-      // update currently playing chord
-      play(currentlyPlayingStepInScale);
-    }
   } else {
     handleChordKeyDown(e)
   }
@@ -388,19 +366,24 @@ function updateKeyChordNames() {
 function addKeys() {
   const keys = document.getElementById("keys");
   for (let i = 0; i < 7; i++) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("chord-key-wrapper");
+    wrapper.style.setProperty('--x', positions[i].x + "%");
+    wrapper.style.setProperty('--y', positions[i].y + "%");
+    
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.style.setProperty('--x', positions[i].x + "%");
-    k.style.setProperty('--y', positions[i].y + "%");
-    k.addEventListener("mousedown", async () => {
+    k.addEventListener("pointerdown", async () => {
       showKeyPressed(i)
       await play(i)
     })
-    k.addEventListener("mouseup", () => {
+    k.addEventListener("pointerup", () => {
       showKeyReleased(i)
       releaseChordKey(i)
     })
-    keys.appendChild(k);
+    wrapper.appendChild(k);
+
+    keys.appendChild(wrapper);
   }
 }
 const positions = [
@@ -418,7 +401,7 @@ function addScaleRootDropdownOptions() {
   scaleMap.forEach((_v, k) => {
     const option = document.createElement("option");
     option.value = k;
-    option.textContent = `root: ${k}`;
+    option.textContent = k;
     dropdown.appendChild(option)
   })
 }
@@ -429,7 +412,7 @@ function addScaleTypeDropdownOptions() {
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
-    option.textContent = `scale: ${scaleNames.get(i)}`;
+    option.textContent = scaleNames.get(i);
     dropdown.appendChild(option)
   }
 }
@@ -439,18 +422,29 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
+    option.textContent = INSTRUMENTS[i];
     dropdown.appendChild(option)
   }
 }
 
 function addJoystick() {
-  const joyParams = { "autoReturnToCenter": false }
+  const joyParams = {
+    "internalFillColor": "#3b4cb3",
+    "internalStrokeColor": "#292563",
+    "externalStrokeColor": "#2a2a33",
+    "autoReturnToCenter": true,
+  }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
-    joystickDirection.value = chordTransform;
+    if (joystickDirection.value !== chordTransform) {
+      joystickDirection.value = chordTransform;
+      if (chordIsPlaying()) {
+        // update currently playing chord
+        play(currentlyPlayingStepInScale);
+      }
+    }
   });
 }
 

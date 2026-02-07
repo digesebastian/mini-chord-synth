@@ -1,49 +1,54 @@
 .chord-key {
   border: none;
   outline: none;
-  position: absolute;
-  aspect-ratio: 1/cos(30deg);
-  clip-path: polygon(50% -50%, 100% 50%, 50% 150%, 0 50%);
-  transform: translate(-50%, -50%);
-  height: 160px;
-  width: 190px;
-  top: var(--y);
-  left: var(--x);
-
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  
+  height: 100%;
+  width: 100%;
+  
   /* Inner text */
   color: #e2e2e2;
   font-size: large;
   font-weight: bold;
+  
+  background: radial-gradient(circle, #7771d2, #4f47b8);
+  
+  /* minor QOL for touch devices */ 
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 
-  background-color: #efb12c;
-  background-image: linear-gradient(#6a63d9, #4f47b8);
-
-  transition: transform .09s ease, filter .09s ease, box-shadow .09s ease;
   cursor: pointer;
-
-  display: grid;
-  place-items: center;
+  
+  /* make button pop out */ 
+  transition: transform 0.05s ease-in-out, scale 0.05s ease-in-out;
+  scale: 103%;
+  transform: translate(-0%, -5%);
 }
 
+.chord-key-wrapper {
+  /* Acts as border for the keys */ 
+  background-color: #383846;
+  padding: 3px;
 
-.joystick-box {
-  height: 200px;
-  width: 200px;
+  height: 40%;
+  width: 21%;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  transform: translate(-50%, -50%);
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
 }
 
 .chord-key.pressed {
-  border: none;
-  outline: none;
-  background-color: #ffda75;
-  scale: 0.96;
-  background: linear-gradient(145deg, #ffda75, #f2c94c);
+  scale: 100%;
+  transform: translate(0%, 0.5%);
+  background: radial-gradient(circle, #f3be21, #ffda75);
 }
 
 body {
   margin: 0;
   display: flex;
   justify-content: center;
-
 }
 
 #mini-synth {
@@ -76,21 +81,20 @@ body {
   height: 80px;
   display: block;
   border-radius: 18px;
-  background: black;
 }
 
 #keys {
+  /* border: #0b0b10 1px solid; */
   position: relative;
   height: 50%;
   width: 100%;
-
 }
-
 
 
 #piano {
   align-self: center;
-  height: 10%;
+  height: 8%;
+
   padding: 10px 12px;
   border-radius: 16px;
   background-image: linear-gradient(#2a2a33, #17171d);
@@ -249,61 +253,82 @@ body {
   flex-direction: row;
   height: 32%;
   width: 100%;
-
 }
 
 #controls-1 {
-
-  padding: 20px;
-  flex: 1;
-
+  /* border: #0b0b10 1px solid; */
+  flex: 1.25;
+  place-items: center;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  padding-top: 40px;
 }
 
 #controls-2 {
-  flex: 1;
+  flex: 0.5;
 }
 
 #controls-3 {
-  padding: 20px;
-  flex: 1;
+  flex: 1.25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-select {
-  appearance: none;
+.control-dropdown-container {
+  /* border: #0b0b10 1px solid; */
+  position: relative;
+  width: 250px;
+}
+
+.control-dropdown-label {
+  width: 220px;
+  height: 30px;
   padding: 10px 0px 10px 20px;
-  font-size: 17px;
+  border-radius: 16px;
+  background-color: #2a2a33;
+
+  display: flex;
+  align-items: center;
+  font-size: 19px;
   font-weight: 500;
-  border-radius: 25px;
   color: #e2e2e2;
-  cursor: pointer;
+  
+  pointer-events: none; /* Let clicks pass through to the select below */
+
+  /* Draw arrow on dropdown */
   background-image: url('data:image/svg+xml;utf8,<svg fill="%232c3e50" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 12px center;
 }
 
-#scale-root-select {
-  width: 220px;
+.control-dropdown-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 10px 0px 10px 20px;
+
+  cursor: pointer;
+  opacity: 0; /* Hidden but clickable */
+
+  font-size: 17px;
+  font-weight: 500;
+  color: #e2e2e2;
   background-color: #2a2a33;
 }
 
-
-#scale-type-select {
-  margin-top: 10px;
-  width: 220px;
-  background-color: #2a2a33;
-}
-
-#instrument-select {
-  margin-top: 10px;
-  width: 220px;
-  background-color: #2a2a33;
+.joystick-box {
+  height: 200px;
+  width: 200px;
 }
 
 #joystick-direction {
   font-size: 18px;
-  font-weight: 500;
+  text-align: center;
   color: #ffffff;
-  background-position: center;
-  width: 180px;
-  background-color: #24bda8;
+  width: 120px;
+  background-color: #2a2a33;
 }
