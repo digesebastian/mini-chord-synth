@@ -6,6 +6,7 @@ import { Guitar } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
 import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
 import { startWaveVisualizer } from "./wave-visualizer.js";
+import { renderMiniGuitar,  clearMiniGuitar, setMiniGuitarFromFrets } from "./mini-guitar.js";
 
 import * as Tone from "tone";
 import { log } from "tone/build/esm/core/util/Debug.js";
@@ -142,7 +143,7 @@ function getScaleToneNames(scale, scaleRootSymbol) {
     const b = cScaleSemitonesRotated[i];
     const P = 12;
     const differenceToCScale = ((((a - b) + (P / 2)) % P) + P) % P - (P / 2)
-    
+
     switch (differenceToCScale) {
       case 2:
         sign = '##';
@@ -224,13 +225,14 @@ async function play(scaleDegree) {
     playSynth(chordNotes, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     const scale = scales.get(scaleType);
-
     const chord = Chord.createChord(scale, scaleDegree, chordTransform);
 
     const chordSemitones = chord.getSemitones()
       .map(s => (s + scaleSemitones)) // adjust to current scale
       .map(s => s % 12)
 
+    const frets = guitar.calculateTriadFrets(chordSemitones, 12, 5);
+    setMiniGuitarFromFrets(frets, chordSemitones[0], Guitar.OPEN_STRING_PITCH);
     guitar.updateChord(chordSemitones);
   }
 }
@@ -248,7 +250,12 @@ function releaseChordKey(scaleDegree) {
   }
   currentlyPlayingChord = null;
   currentlyPlayingStepInScale = null;
-  clearMiniPiano();
+  if (currentInstrument === "Guitar") {
+    clearMiniGuitar();
+    guitar.clearChord();
+  } else {
+    clearMiniPiano();
+  }
 }
 
 function playSines(nodes) {
@@ -288,7 +295,9 @@ document.getElementById("scale-type-select").addEventListener("change", (e) => c
 
 function changeInstrument(instrument) {
   currentInstrument = instrument;
+  updateInstrumentUI(instrument);
 }
+
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
 const chordKeys = ["a", "w", "s", "d", "r", "f", "g"];
@@ -445,6 +454,21 @@ function addJoystick() {
   });
 }
 
+//function to change the UI for instrument select
+function updateInstrumentUI(instrument) {
+  const pianoEl = document.getElementById("piano");
+  const guitarEl = document.getElementById("guitar");
+
+  if (!pianoEl || !guitarEl) return;
+
+  if (instrument === "Guitar") {
+    pianoEl.classList.add("hidden");
+    guitarEl.classList.remove("hidden");
+  } else {
+    guitarEl.classList.add("hidden");
+    pianoEl.classList.remove("hidden");
+  }
+}
 
 async function initializeApp() {
   document.addEventListener("click", async () => {
@@ -460,11 +484,12 @@ async function initializeApp() {
 
   addKeys();
   updateScaleChordNames();
-  renderMiniPiano(6,  1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
-  addScaleRootDropdownOptions();
+  renderMiniPiano(6, 1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  renderMiniGuitar(5);
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
   addInstrumentDropdownOptions();
+  updateInstrumentUI(currentInstrument);
   addJoystick();
 
 
@@ -473,7 +498,7 @@ async function initializeApp() {
     await setupWorklet(ctxt);
     console.log("AudioWorklet successfully loaded.");
 
-  guitar = new Guitar(ctxt);
+    guitar = new Guitar(ctxt);
     await guitar.initializeStrings();
     console.log("Guitar strings initialized");
   } catch (err) {
