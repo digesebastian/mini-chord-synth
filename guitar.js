@@ -76,13 +76,13 @@ const karplusProcessorScript = `
 `;
 
 let workletLoadPromise = null;
-export function setupWorklet(audioContext){
-    if (!workletLoadPromise) {
-        const blob = new Blob([karplusProcessorScript], {type: 'application/javascript'})
-        const url = URL.createObjectURL(blob);
-        workletLoadPromise = audioContext.audioWorklet.addModule(url);
-    }
-    return workletLoadPromise;
+export function setupWorklet(audioContext) {
+  if (!workletLoadPromise) {
+    const blob = new Blob([karplusProcessorScript], { type: 'application/javascript' })
+    const url = URL.createObjectURL(blob);
+    workletLoadPromise = audioContext.audioWorklet.addModule(url);
+  }
+  return workletLoadPromise;
 }
 
 // (one string)
@@ -229,7 +229,12 @@ export class Guitar {
         // this.compressor.connect(this.outputNode);
         this.outputNode.connect(this.context.destination);
 
-        this.rhythmScheduler();
+    this.rhythmScheduler();
+    
+  }
+
+  clearChord() {
+      this.currentChord = null;
     }
   
     async initializeStrings() {

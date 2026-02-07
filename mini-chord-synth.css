@@ -64,9 +64,8 @@ body {
     0 -6px 3px -4px #d28613 inset;
   background-image: linear-gradient(#d99022, #d28613);
   display: flex;
-  /* ✅ EKLE */
   flex-direction: column;
-  /* ✅ EKLE */
+
 }
 
 
@@ -98,13 +97,7 @@ body {
 
   padding: 10px 12px;
   border-radius: 16px;
-  background-color: #2a2a33;
-  box-shadow:
-    14px 0 3px -7px rgba(255, 255, 255, .06) inset,
-    -14px 0 3px -7px rgba(0, 0, 0, .25) inset,
-    0 20px 3px -7px rgba(255, 255, 255, .05) inset,
-    0 -8px 3px -4px rgba(0, 0, 0, .35) inset;
-
+  background-image: linear-gradient(#2a2a33, #17171d);
   user-select: none;
 }
 
@@ -160,6 +153,100 @@ body {
 .pkey.black.bass {
   background-image: linear-gradient(#f2c94c, #b88918);
 }
+
+.hidden {
+  display: none !important;
+}
+
+#guitar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#guitar .guitar {
+  position: relative;
+  height: 90px;
+  width: 800px;
+  border-radius: 12px;
+  background: #7a624c;
+  overflow: hidden;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  overflow: visible;  
+}
+
+#guitar .guitar::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 6px;
+  bottom: 6px;
+
+  /* strings */
+  background:
+    linear-gradient(rgba(246, 205, 0, 0.699), rgba(246, 205, 0, 0.699)) 0 0 / 100% 3px,
+    linear-gradient(rgba(246, 205, 0, 0.699), rgba(246, 205, 0, 0.699)) 0 20% / 100% 3px,
+    linear-gradient(rgba(246, 205, 0, 0.699), rgb(246, 205, 0, 0.699)) 0 40% / 100% 3px,
+    linear-gradient(rgba(246, 205, 0, 0.699), rgba(246, 205, 0, 0.699)) 0 60% / 100% 3px,
+    linear-gradient(rgba(246, 205, 0, 0.699), rgba(246, 205, 0, 0.699)) 0 80% / 100% 3px,
+    linear-gradient(rgba(246, 205, 0, 0.699), rgba(246, 205, 0, 0.699)) 0 100% / 100% 3px;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  opacity: .95;
+}
+
+
+#guitar .guitar::after {
+  content: "";
+  position: absolute;
+  left: calc(10px + 18px);
+  right: 10px;
+  top: 6px;
+  bottom: 6px;
+  /* 6 pieces:  100%/6 */
+  background:
+    repeating-linear-gradient(to right,
+      rgba(255, 255, 255, 0.606) 0 2px,
+      transparent 1px calc(100%/6));
+  pointer-events: none;
+  opacity: .85;
+}
+
+.g-row{
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 0..5 */
+  align-items: center;
+}
+
+.g-string-label{ position: absolute; left: -9999px; }
+
+.g-cell{
+ width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.g-cell::after{
+  content:"";
+  width: 8px;      
+  height: 8px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity .08s ease, transform .08s ease, box-shadow .08s ease;
+}
+
+
+.g-cell.active::after{
+  opacity: 1;
+  transform: scale(1.5);
+  background-image: linear-gradient(#6a63ff, #4a3fd1);
+}
+
 
 #controls {
   display: flex;
