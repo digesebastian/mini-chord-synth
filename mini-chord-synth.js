@@ -183,32 +183,6 @@ function getNodeName(semitones) {
   return NODE_NAMES[semitones] + '4'
 }
 
-function getChord(scaleDegree) {
-  const scale = scales.get(scaleType);
-
-  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
-
-  const chordSemitones = chord.getSemitones()
-    .map(s => (s + scaleSemitones)) // adjust to current scale
-    .map(s => s % 12) // fit all notes in one octave
-
-  const chordRoot = getNodeName(chordSemitones[0])
-  const chordThird = getNodeName(chordSemitones[1])
-  const chordFifth = getNodeName(chordSemitones[2])
-
-  const outputChord = [chordRoot, chordThird, chordFifth]
-
-  if (chord.seventh !== undefined) {
-    outputChord.push(getNodeName(chordSemitones[3]))
-  }
-
-  if (chord.ninth !== undefined) {
-    outputChord.push(getNodeName(chordSemitones[4]))
-  }
-
-  return outputChord
-}
-
 async function play(scaleDegree) {
   if (!isInitialized) {
     await Tone.start()
@@ -216,21 +190,20 @@ async function play(scaleDegree) {
   }
   currentlyPlayingStepInScale = scaleDegree;
 
-  const chordNotes = getChord(scaleDegree);
+  const scale = scales.get(scaleType)
+
+  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
+  
+  const chordSemitones = chord.getSemitones()
+    .filter(s => s !== undefined)
+    .map(s => (s + scaleSemitones)) // adjust to current scale
+    .map(s => s % 12) // fit all notes in one octave
 
   if (currentInstrument === 'Sines') {
-    playSynth(chordNotes, sineSynth);
+    playSynth(chordSemitones, sineSynth);
   } else if (currentInstrument === 'Sawtooth') {
-    playSynth(chordNotes, sawSynth);
+    playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
-    const scale = scales.get(scaleType);
-
-    const chord = Chord.createChord(scale, scaleDegree, chordTransform);
-
-    const chordSemitones = chord.getSemitones()
-      .map(s => (s + scaleSemitones)) // adjust to current scale
-      .map(s => s % 12)
-
     guitar.updateChord(chordSemitones);
   }
 }
@@ -251,8 +224,17 @@ function releaseChordKey(scaleDegree) {
   clearMiniPiano();
 }
 
-function playSynth(nodes, synth) {
-  const bass = nodes[0].replace(/4/g, '3');
+function playSynth(semitones, synth) {
+  const nodes = semitones.map(s => getNodeName(s))
+  
+  const root = nodes[0];
+
+  if (nodes.length > 4) {
+    // remove root to avoid cluttered chords
+    nodes.shift();
+  }
+
+  const bass = root.replace(/4/g, '3');
   const chord = [bass].concat(nodes)
 
   let nodesToPlay = chord;
@@ -431,7 +413,7 @@ function addInstrumentDropdownOptions() {
 function addJoystick() {
   const joyParams = { 
     "internalFillColor": "#3b4cb3",
-    "internalStrokeColor": "#2a2a33",
+    "internalStrokeColor": "#292563",
     "externalStrokeColor": "#2a2a33",
     "autoReturnToCenter": true,
   }
