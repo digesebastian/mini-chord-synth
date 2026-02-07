@@ -239,7 +239,7 @@ body {
 
 .g-cell.active::after{
   opacity: 1;
-  transform: scale(1);
+  transform: scale(1.5);
   background-image: linear-gradient(#6a63ff, #4a3fd1);
 }
 
