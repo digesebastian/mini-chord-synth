@@ -7,8 +7,7 @@ import { setupWorklet } from "./guitar.js";
 import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
 import { startWaveVisualizer } from "./wave-visualizer.js";
 
-import * as Tone from "tone";
-import { log } from "tone/build/esm/core/util/Debug.js";
+import * as Tone from 'https://esm.sh/tone';
 
 // MODEL
 
@@ -48,7 +47,7 @@ let scaleType = 0;
 
 let scaleChordNames = new Array(7).fill(null);
 
-let chordTransform = 'None';
+let chordTransform = 'base';
 
 let currentInstrument = 'Sines';
 
@@ -205,6 +204,9 @@ async function play(scaleDegree) {
     playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     guitar.updateChord(chordSemitones);
+    guitar.updateScale(
+      scale.map(s => (s + scaleSemitones) % 12)
+    );
   }
 }
 
@@ -218,6 +220,8 @@ function releaseChordKey(scaleDegree) {
     sineSynth.triggerRelease(currentlyPlayingChord);
   } else if (currentInstrument === 'Sawtooth') {
     sawSynth.triggerRelease(currentlyPlayingChord);
+  } if (currentInstrument === 'Guitar' && guitar) {
+    guitar.stop();
   }
   currentlyPlayingChord = null;
   currentlyPlayingStepInScale = null;
