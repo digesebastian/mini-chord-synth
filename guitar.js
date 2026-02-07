@@ -1,3 +1,5 @@
+import * as Tone from 'https://esm.sh/tone';
+
 // ACOUSTIC GUITAR
 // check https://www.mathworks.com/help/signal/ug/generate-guitar-chords-using-the-karplus-strong-algorithm.html to understand the code 
 
@@ -147,7 +149,6 @@ class GuitarString {
 //   }
 
 //instrument
-import * as Tone from "tone";
 export class Guitar {
 
     static openStringMidi = [40, 45, 50, 55, 59, 64];
