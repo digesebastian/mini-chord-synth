@@ -1,3 +1,5 @@
+import * as Tone from 'https://esm.sh/tone';
+
 // ACOUSTIC GUITAR
 // check https://www.mathworks.com/help/signal/ug/generate-guitar-chords-using-the-karplus-strong-algorithm.html to understand the code 
 
@@ -74,13 +76,13 @@ const karplusProcessorScript = `
 `;
 
 let workletLoadPromise = null;
-export function setupWorklet(audioContext){
-    if (!workletLoadPromise) {
-        const blob = new Blob([karplusProcessorScript], {type: 'application/javascript'})
-        const url = URL.createObjectURL(blob);
-        workletLoadPromise = audioContext.audioWorklet.addModule(url);
-    }
-    return workletLoadPromise;
+export function setupWorklet(audioContext) {
+  if (!workletLoadPromise) {
+    const blob = new Blob([karplusProcessorScript], { type: 'application/javascript' })
+    const url = URL.createObjectURL(blob);
+    workletLoadPromise = audioContext.audioWorklet.addModule(url);
+  }
+  return workletLoadPromise;
 }
 
 // (one string)
@@ -147,7 +149,6 @@ class GuitarString {
 //   }
 
 //instrument
-import * as Tone from "tone";
 export class Guitar {
 
     static openStringMidi = [40, 45, 50, 55, 59, 64];
@@ -230,7 +231,12 @@ export class Guitar {
         // this.compressor.connect(this.outputNode);
         this.outputNode.connect(this.context.destination);
 
-        this.rhythmScheduler();
+    this.rhythmScheduler();
+    
+  }
+
+  clearChord() {
+      this.currentChord = null;
     }
   
     async initializeStrings() {
