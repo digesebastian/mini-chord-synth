@@ -10,8 +10,5 @@
   },
   "devDependencies": {
     "vite": "^7.1.7"
-  },
-  "dependencies": {
-    "tone": "^15.1.22"
   }
 }
