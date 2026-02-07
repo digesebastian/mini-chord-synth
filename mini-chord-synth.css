@@ -2,49 +2,29 @@
   border: none;
   outline: none;
   position: absolute;
-  aspect-ratio: 1/cos(30deg);
-  clip-path: polygon(50% -50%, 100% 50%, 50% 150%, 0 50%);
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   transform: translate(-50%, -50%);
+
   height: 160px;
   width: 190px;
   top: var(--y);
   left: var(--x);
-  background-color: #efb12c;
+
+  /* Inner text */
+  color: #e2e2e2;
+  font-size: large;
+  font-weight: bold;
+
   background-image: linear-gradient(#6a63d9, #4f47b8);
-  box-shadow:
-    12px 0 3px -7px rgba(255,255,255,.18) inset,
-    -12px 0 3px -7px rgba(0,0,0,.22) inset,
-    0 26px 3px -7px rgba(255,255,255,.20) inset,
-    0 -6px 3px -4px rgba(0,0,0,.35) inset;
 
-  transition: transform .09s ease, filter .09s ease, box-shadow .09s ease;
   cursor: pointer;
-
-  display: grid;
-  place-items: center;
-
-  /* background: linear-gradient(145deg, #4a5fd0, #3b4cb3);
-  transition: 0.09s ease;
-  box-shadow:
-    inset 0 2px 4px rgba(255,255,255,.25); */
-
-}
-
-
-
-
-.joystick-box {
-
-  height: 200px;
-  width: 200px;
-
 }
 
 .chord-key.pressed {
   border: none;
   outline: none;
   background-color: #ffda75;
-  scale: 0.96;
+  scale: 0.97;
   box-shadow:
     inset 0 3px 6px rgba(0, 0, 0, .3);
   background: linear-gradient(145deg, #ffda75, #f2c94c);
@@ -60,63 +40,79 @@ body {
 #mini-synth {
   background-color: #e2a953;
   margin-top: 30px;
-  height: 800px;
+  height: 850px;
   width: 900px;
-   border-radius: 75px;
-      box-shadow:
+  border-radius: 75px;
+  box-shadow:
     14px 0 3px -7px #e0a54c inset,
     -14px 0 3px -7px #e09e3a inset,
     0 32px 3px -7px #d99022 inset,
     0 -6px 3px -4px #d28613 inset;
-    background-image: linear-gradient(#d99022, #d28613);
-  display: flex;              /* ✅ EKLE */
-  flex-direction: column;     /* ✅ EKLE */
+  background-image: linear-gradient(#d99022, #d28613);
+  display: flex;
+  /* ✅ EKLE */
+  flex-direction: column;
+  /* ✅ EKLE */
+}
+
+
+#waves {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#waveviz {
+  width: 80%;
+  height: 80px;
+  display: block;
+  border-radius: 18px;
 }
 
 #keys {
   position: relative;
   height: 50%;
   width: 100%;
-
 }
 
-#piano{
-align-self: center; 
-  height: 10%;
+
+#piano {
+  align-self: center;
+  height: 8%;
 
   padding: 10px 12px;
   border-radius: 16px;
-
-  background-image: linear-gradient(#2a2a33, #17171d);
+  background-color: #2a2a33;
   box-shadow:
-    14px 0 3px -7px rgba(255,255,255,.06) inset,
-    -14px 0 3px -7px rgba(0,0,0,.25) inset,
-    0 20px 3px -7px rgba(255,255,255,.05) inset,
-    0 -8px 3px -4px rgba(0,0,0,.35) inset;
+    14px 0 3px -7px rgba(255, 255, 255, .06) inset,
+    -14px 0 3px -7px rgba(0, 0, 0, .25) inset,
+    0 20px 3px -7px rgba(255, 255, 255, .05) inset,
+    0 -8px 3px -4px rgba(0, 0, 0, .35) inset;
 
 
   user-select: none;
 }
 
-.mini-piano{
+.mini-piano {
   position: relative;
   display: flex;
   gap: 2px;
 }
 
 /* white keys */
-.pkey.white{
+.pkey.white {
   width: 14px;
   height: 54px;
   border-radius: 4px;
   background-image: linear-gradient(#f2f2f6, #d9dae0);
   box-shadow:
-    0 1px 0 rgba(255,255,255,.7) inset,
-    0 -8px 10px rgba(0,0,0,.14) inset;
+    0 1px 0 rgba(255, 255, 255, .7) inset,
+    0 -8px 10px rgba(0, 0, 0, .14) inset;
 }
 
 /* black keys overlay */
-.pkey.black{
+.pkey.black {
   position: absolute;
   top: 0;
   width: 9px;
@@ -124,101 +120,114 @@ align-self: center;
   border-radius: 3px;
   background-image: linear-gradient(#2c2c32, #0b0b10);
   box-shadow:
-    0 1px 0 rgba(255,255,255,.08) inset,
-    0 -8px 10px rgba(0,0,0,.35) inset;
+    0 1px 0 rgba(255, 255, 255, .08) inset,
+    0 -8px 10px rgba(0, 0, 0, .35) inset;
 }
 
 /* active notes */
-.pkey.active{
+.pkey.active {
   background-image: linear-gradient(#6a63ff, #4a3fd1);
   box-shadow:
-    0 0 6px rgba(106,99,255,.85),
-    0 0 12px rgba(106,99,255,.35);
+    0 0 6px rgba(106, 99, 255, .85),
+    0 0 12px rgba(106, 99, 255, .35);
 }
 
-.pkey.black.active{
+.pkey.black.active {
   background-image: linear-gradient(#6a63ff, #3a33b6);
 }
 
-.pkey.bass{
+.pkey.bass {
   background-image: linear-gradient(#ffda75, #f2c94c);
   box-shadow:
-    0 0 6px rgba(242,201,76,.75),
-    0 0 12px rgba(242,201,76,.35);
+    0 0 6px rgba(242, 201, 76, .75),
+    0 0 12px rgba(242, 201, 76, .35);
 }
 
-.pkey.black.bass{
+.pkey.black.bass {
   background-image: linear-gradient(#f2c94c, #b88918);
 }
 
 #controls {
   display: flex;
   flex-direction: row;
-  height: 50%;
+  height: 32%;
   width: 100%;
-
 }
 
 #controls-1 {
-  padding: 30px;
-  flex: 1;
-
+  /* border: #0b0b10 1px solid; */
+  flex: 1.25;
+  place-items: center;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  padding-top: 40px;
 }
 
 #controls-2 {
-  flex: 1;
+  flex: 0.5;
 }
 
 #controls-3 {
-  padding: 30px;
-  flex: 1;
+  flex: 1.25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+.control-dropdown-container {
+  /* border: #0b0b10 1px solid; */
+  position: relative;
+  width: 250px;
+}
 
-label {
-  font-size: 24px;
+.control-dropdown-label {
+  width: 220px;
+  height: 30px;
+  padding: 10px 0px 10px 20px;
+  border-radius: 16px;
+  background-color: #2a2a33;
+
+  display: flex;
+  align-items: center;
+  font-size: 19px;
   font-weight: 500;
-  color: #cfe1f2;
-}
-
-select {
-  appearance: none;
-  padding: 16px 50px 16px 20px;
-  font-size: 18px;
-  font-weight: 700;
-  border-radius: 25px;
   color: #e2e2e2;
-  cursor: pointer;
+  
+  pointer-events: none; /* Let clicks pass through to the select below */
+
+  /* Draw arrow on dropdown */
   background-image: url('data:image/svg+xml;utf8,<svg fill="%232c3e50" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 12px center;
 }
 
-#scale-root-select {
-  width: 260px;
-  background-color:#3b4cb3;
+.control-dropdown-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 10px 0px 10px 20px;
+
+  cursor: pointer;
+  opacity: 0; /* Hidden but clickable */
+
+  font-size: 17px;
+  font-weight: 500;
+  color: #e2e2e2;
+  background-color: #2a2a33;
 }
 
-
-#scale-type-select {
-  margin-top: 10px;
-  width: 260px;
-  background-color: #3b4cb3;
-}
-
-#instrument-select {
-  margin-top: 10px;
-  width: 260px;
-  background-color: #3b4cb3;
+.joystick-box {
+  height: 200px;
+  width: 200px;
 }
 
 #joystick-direction {
-  padding: 16px 50px 16px 20px;
   font-size: 18px;
-  font-weight: 700;
-  border-radius: 25px;
+  text-align: center;
   color: #ffffff;
-  background-position: right 12px center;
-  width: 180px;
-  background-color: #3b4cb3;
+  width: 120px;
+  background-color: #2a2a33;
 }

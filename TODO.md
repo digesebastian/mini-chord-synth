@@ -16,7 +16,7 @@
 ### Chords
 [x] Add 1 chord extension
     [x] Add remaining chord extensions  
-    [] Remove root from 7th chords and root+5th from 9th chords  
+    [x] Remove root from 9th chords  
     [x] Refactor to allow chords to remain in scale
 [x] Fit all chords of scale within one octave  
 
@@ -27,9 +27,9 @@
 [] Add guitar sound
 
 ### Design
-[] Design a layout for the synth  
-[] Add some visualization of the sound  
-[] Add keyboard displaying played notes
+[x] Design a layout for the synth  
+[x] Add some visualization of the sound  
+[x] Add keyboard displaying played notes
 
 ### Documentation
 [] Add documentation
@@ -41,4 +41,3 @@
     [] Functionality to pick range where chords are played
 
 [] Ability to change key bindings
-

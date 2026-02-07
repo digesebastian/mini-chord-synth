@@ -1,10 +1,14 @@
-import { scales, scaleNames } from "./scales.js";
+import { scales, scaleNames, scaleMap } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
 import { Guitar } from "./guitar.js";
 import { setupWorklet } from "./guitar.js";
+import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
+import { startWaveVisualizer } from "./wave-visualizer.js";
+
 import * as Tone from "tone";
+import { log } from "tone/build/esm/core/util/Debug.js";
 
 // MODEL
 
@@ -13,7 +17,7 @@ import * as Tone from "tone";
 const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 const TRANSFORMATION_MAP = new Map([
-  ['C', 'None'],
+  ['C', 'base'],
   ['N', 'maj/min'],
   ['NE', '7th'],
   ['E', 'maj/min 7th'],
@@ -38,7 +42,11 @@ let sawSynth;
 
 let scaleSemitones = 0;
 
+let scaleRootSymbol = 'C';
+
 let scaleType = 0;
+
+let scaleChordNames = new Array(7).fill(null);
 
 let chordTransform = 'None';
 
@@ -54,6 +62,9 @@ const activeChordKeys = new Set();
 
 const ctxt = new AudioContext();
 
+let waveAnalyser;
+let waveRafId = null;
+
 // CONTROLLER
 
 function initializeAudioContext() {
@@ -64,6 +75,15 @@ function initializeAudioContext() {
     attack: 0.1,
     release: 0.5
   }).connect(gain)
+
+  waveAnalyser = new Tone.Analyser("waveform", 1024);
+
+  // compressor -> gain -> destination
+  compressor.connect(gain);
+
+  // send the signal to analyser
+  compressor.connect(waveAnalyser);
+
   sineSynth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
       attack: 0.2,
@@ -85,34 +105,82 @@ function initializeAudioContext() {
   }).connect(compressor);
 }
 
-function getNodeName(semitones) {
-  return NODE_NAMES[semitones] + '4'
+function updateScaleChordNames() {
+  const scale = scales.get(scaleType);
+  const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol, scaleSemitones);
+
+  for (let i = 0; i < 7; i++) {
+    const triad = Chord.getTriad(scale, i)
+    const chordQuality = Chord.getChordName(triad);
+    const shortForm = toShortFormChordQuality(chordQuality);
+
+    scaleChordNames[i] = scaleToneNames[i] + shortForm
+  }
+  updateKeyChordNames();
 }
 
-function getChord(scaleDegree) {
-  const scale = scales.get(scaleType);
+function getScaleToneNames(scale, scaleRootSymbol, scaleSemitones) {
+  const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
 
-  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
+  const rootSymbolNatural = scaleRootSymbol[0];
 
-  const chordSemitones = chord.getSemitones()
+  const currentScaleSemitones = scale
     .map(s => (s + scaleSemitones)) // adjust to current scale
-    .map(s => s % 12) // fit all notes in one octave
+    .map(s => s % 12) // move notes to same octave
 
-  const chordRoot = getNodeName(chordSemitones[0])
-  const chordThird = getNodeName(chordSemitones[1])
-  const chordFifth = getNodeName(chordSemitones[2])
+  const indexInCScale = cScale.indexOf(rootSymbolNatural);
+  const cScaleRotated = rotateFromIndex(cScale, indexInCScale)
+  const cScaleSemitonesRotated = rotateFromIndex(cScaleSemitones, indexInCScale)
 
-  const outputChord = [chordRoot, chordThird, chordFifth]
+  let scaleToneNames = [];
+  for (let i = 0; i < 7; i++) {
+    let sign = '';
 
-  if (chord.seventh !== undefined) {
-    outputChord.push(getNodeName(chordSemitones[3]))
+    // modular arithmetic
+    const a = currentScaleSemitones[i];
+    const b = cScaleSemitonesRotated[i];
+    const P = 12;
+    const differenceToCScale = ((((a - b) + (P / 2)) % P) + P) % P - (P / 2)
+    
+    switch (differenceToCScale) {
+      case 2:
+        sign = '##';
+        break;
+      case 1:
+        sign = '#';
+        break;
+      case -1:
+        sign = 'b';
+        break;
+      case -2:
+        sign = 'bb'
+        break;
+    }
+    scaleToneNames.push(cScaleRotated[i] + sign);
   }
 
-  if (chord.ninth !== undefined) {
-    outputChord.push(getNodeName(chordSemitones[4]))
-  }
+  return scaleToneNames;
+}
 
-  return outputChord
+const rotateFromIndex = (arr, index) => {
+  const start = index % arr.length;
+  return [...arr.slice(start), ...arr.slice(0, start)];
+};
+
+function toShortFormChordQuality(chordQuality) {
+  switch (chordQuality) {
+    case 'maj':
+      return '';
+    case 'min':
+      return 'm';
+    default:
+      return chordQuality;
+  }
+}
+
+function getNodeName(semitones) {
+  return NODE_NAMES[semitones] + '4'
 }
 
 async function play(scaleDegree) {
@@ -122,21 +190,20 @@ async function play(scaleDegree) {
   }
   currentlyPlayingStepInScale = scaleDegree;
 
-  const chordNotes = getChord(scaleDegree);
+  const scale = scales.get(scaleType)
+
+  const chord = Chord.createChord(scale, scaleDegree, chordTransform);
+  
+  const chordSemitones = chord.getSemitones()
+    .filter(s => s !== undefined)
+    .map(s => (s + scaleSemitones)) // adjust to current scale
+    .map(s => s % 12) // fit all notes in one octave
 
   if (currentInstrument === 'Sines') {
-    playSynth(chordNotes, sineSynth);
+    playSynth(chordSemitones, sineSynth);
   } else if (currentInstrument === 'Sawtooth') {
-    playSynth(chordNotes, sawSynth);
+    playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
-    const scale = scales.get(scaleType);
-
-    const chord = Chord.createChord(scale, scaleDegree, chordTransform);
-
-    const chordSemitones = chord.getSemitones()
-      .map(s => (s + scaleSemitones)) 
-      .map(s => s % 12)
-    
     guitar.updateChord(chordSemitones);
     guitar.updateScale(
       scale.map(s => (s + scaleSemitones) % 12)
@@ -162,21 +229,24 @@ function releaseChordKey(scaleDegree) {
   clearMiniPiano();
 }
 
-function playSines(nodes) {
-  const bass = nodes[0].replace(/4/g, '3');
-  const withBass = [bass].concat(nodes)
-  sineSynth.triggerAttackRelease(withBass, "4n");
-}
+function playSynth(semitones, synth) {
+  const nodes = semitones.map(s => getNodeName(s))
+  
+  const root = nodes[0];
 
-function playSynth(nodes, synth) {
-  const bass = nodes[0].replace(/4/g, '3');
+  if (nodes.length > 4) {
+    // remove root to avoid cluttered chords
+    nodes.shift();
+  }
+
+  const bass = root.replace(/4/g, '3');
   const chord = [bass].concat(nodes)
 
   let nodesToPlay = chord;
   if (chordIsPlaying()) {
     nodesToPlay = nodesToPlay.filter(n => !currentlyPlayingChord.includes(n));
     const nodesToRelease = currentlyPlayingChord.filter(n => !chord.includes(n));
-    synth.triggerRelease(nodesToRelease); // releases currently playing chord
+    synth.triggerRelease(nodesToRelease);
   }
 
   currentlyPlayingChord = chord;
@@ -184,22 +254,28 @@ function playSynth(nodes, synth) {
   synth.triggerAttack(nodesToPlay);
 }
 
-function changeScaleRoot(root) {
-  scaleSemitones = parseInt(root);
+function changeScaleRoot(rootSymbol) {
+  scaleRootSymbol = rootSymbol;
+  scaleSemitones = scaleMap.get(rootSymbol);
+  updateScaleChordNames();
+  document.getElementById("scale-root-select-label").textContent = "Root: " + rootSymbol;
 }
 document.getElementById("scale-root-select").addEventListener("change", (e) => changeScaleRoot(e.target.value))
 
 function changeScaleType(newScale) {
   scaleType = parseInt(newScale);
+  updateScaleChordNames();
+  document.getElementById("scale-type-select-label").textContent = "Scale: " + scaleNames.get(scaleType);
 }
 document.getElementById("scale-type-select").addEventListener("change", (e) => changeScaleType(e.target.value))
 
 function changeInstrument(instrument) {
   currentInstrument = instrument;
+  document.getElementById("instrument-select-label").textContent = "Instrument: " + instrument;
 }
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
-const chordKeys = ["a", "s", "d", "f", "g", "h", "j"];
+const chordKeys = ["a", "w", "s", "d", "r", "f", "g"];
 async function handleChordKeyDown(e) {
   if (!isInitialized) {
     await Tone.start()
@@ -213,17 +289,6 @@ async function handleChordKeyDown(e) {
     showKeyPressed(index)
     play(index);
   }
-}
-
-function showKeyPressed(index) {
-  const buttons = document.querySelectorAll(".chord-key");
-  buttons.forEach(btn => btn.classList.remove("pressed"));
-  buttons[index].classList.add("pressed");
-}
-
-function showKeyReleased(index) {
-  const buttons = document.querySelectorAll(".chord-key");
-  buttons[index].classList.remove("pressed");
 }
 
 function handleChordKeyUp(e) {
@@ -246,10 +311,6 @@ async function handleKeydown(e) {
     e.preventDefault(); // prevent page scrolling
     const joyStickPos = handleJoystickKeydown(e.key);
     joy.setPosition(joyStickPos[0], joyStickPos[1])
-    if (chordIsPlaying()) {
-      // update currently playing chord
-      play(currentlyPlayingStepInScale);
-    }
   } else {
     handleChordKeyDown(e)
   }
@@ -277,6 +338,24 @@ function chordIsPlaying() {
 
 // VIEW
 
+function showKeyPressed(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons.forEach(btn => btn.classList.remove("pressed"));
+  buttons[index].classList.add("pressed");
+}
+
+function showKeyReleased(index) {
+  const buttons = document.querySelectorAll(".chord-key");
+  buttons[index].classList.remove("pressed");
+}
+
+function updateKeyChordNames() {
+  const keys = document.querySelectorAll(".chord-key");
+  for (let i = 0; i < 7; i++) {
+    keys[i].textContent = scaleChordNames[i];
+  }
+}
+
 function addKeys() {
   const keys = document.getElementById("keys");
   for (let i = 0; i < 7; i++) {
@@ -303,36 +382,14 @@ const positions = [
   { x: 68, y: 27 },
   { x: 68, y: 73 },
   { x: 86, y: 50 }
-
 ];
 
 function addScaleRootDropdownOptions() {
-  // scale names and number of semitones above C
-  const scaleMap = new Map([
-    ['C', 0],
-    ['C#', 1],
-    ['Db', 1],
-    ['D', 2],
-    ['D#', 3],
-    ['Eb', 3],
-    ['E', 4],
-    ['F', 5],
-    ['F#', 6],
-    ['Gb', 6],
-    ['G', 7],
-    ['G#', 8],
-    ['Ab', 8],
-    ['A', 9],
-    ['A#', 10],
-    ['Bb', 10],
-    ['B', 11]
-  ]);
-
   const dropdown = document.getElementById("scale-root-select")
-  scaleMap.forEach((v, k) => {
+  scaleMap.forEach((_v, k) => {
     const option = document.createElement("option");
-    option.value = v;
-    option.textContent = `root: ${k}`;
+    option.value = k;
+    option.textContent = k;
     dropdown.appendChild(option)
   })
 }
@@ -343,7 +400,7 @@ function addScaleTypeDropdownOptions() {
   for (let i = 0; i < scales.size; i++) {
     const option = document.createElement("option");
     option.value = i;
-    option.textContent = `scale: ${scaleNames.get(i)}`;
+    option.textContent = scaleNames.get(i);
     dropdown.appendChild(option)
   }
 }
@@ -353,18 +410,29 @@ function addInstrumentDropdownOptions() {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     const option = document.createElement("option");
     option.value = INSTRUMENTS[i];
-    option.textContent = `instrument: ${INSTRUMENTS[i]}`;
+    option.textContent = INSTRUMENTS[i];
     dropdown.appendChild(option)
   }
 }
 
 function addJoystick() {
-  const joyParams = { "autoReturnToCenter": false }
+  const joyParams = { 
+    "internalFillColor": "#3b4cb3",
+    "internalStrokeColor": "#292563",
+    "externalStrokeColor": "#2a2a33",
+    "autoReturnToCenter": true,
+  }
   var joystickDirection = document.getElementById("joystick-direction");
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
-    joystickDirection.value = chordTransform;
+    if (joystickDirection.value !== chordTransform) {
+      joystickDirection.value = chordTransform;
+      if (chordIsPlaying()) {
+      // update currently playing chord
+      play(currentlyPlayingStepInScale);
+    }
+    }
   });
 }
 
@@ -378,8 +446,13 @@ async function initializeApp() {
   }, { once: true });
   initializeAudioContext()
 
+  const canvas = document.getElementById("waveviz");
+  startWaveVisualizer(canvas, waveAnalyser);
+
   addKeys();
-  renderMiniPiano(6, 1);
+  updateScaleChordNames();  
+  renderMiniPiano(6,  1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  addScaleRootDropdownOptions();
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
   addInstrumentDropdownOptions();
@@ -391,74 +464,12 @@ async function initializeApp() {
     await setupWorklet(ctxt);
     console.log("AudioWorklet successfully loaded.");
 
-    guitar = new Guitar(ctxt);
+  guitar = new Guitar(ctxt);
     await guitar.initializeStrings();
     console.log("Guitar strings initialized");
   } catch (err) {
     console.error("error initializing strings:", err);
   }
-}
-
-// --- MINI PIANO ---
-function renderMiniPiano(octaves = 2, baseOctave = 4) {
-  const piano = document.getElementById("piano");
-  if (!piano) return;
-
-  piano.innerHTML = "";
-
-  const wrap = document.createElement("div");
-  wrap.className = "mini-piano";
-  piano.appendChild(wrap);
-
-  const WHITE = ["C", "D", "E", "F", "G", "A", "B"];
-  const BLACK_AFTER_WHITE = { C: "C#", D: "D#", F: "F#", G: "G#", A: "A#" };
-
-  const whiteW = 14, gap = 2, step = whiteW + gap;
-  let whiteIndex = 0;
-
-  for (let o = 0; o < octaves; o++) {
-    const octave = baseOctave + o;
-
-    for (const w of WHITE) {
-      const el = document.createElement("div");
-      el.className = "pkey white";
-      el.dataset.note = `${w}${octave}`;   // C4 ... B4, C5 ... B5
-      wrap.appendChild(el);
-
-      const bName = BLACK_AFTER_WHITE[w];
-      if (bName) {
-        const b = document.createElement("div");
-        b.className = "pkey black";
-        b.dataset.note = `${bName}${octave}`; // C#4 ...
-        b.style.left = `${(whiteIndex + 1) * step - 5}px`;
-        wrap.appendChild(b);
-      }
-
-      whiteIndex++;
-    }
-  }
-}
-
-function setMiniPianoActive(notesWithOctave) {
-  // notesWithOctave ["C3","C4","E4","G4"...] 
-  document.querySelectorAll("#piano .pkey")
-    .forEach(k => k.classList.remove("active", "bass"));
-
-  if (!notesWithOctave?.length) return;
-
-  const [bass, ...chord] = notesWithOctave;
-
-  const bassEl = document.querySelector(`#piano .pkey[data-note="${bass}"]`);
-  if (bassEl) bassEl.classList.add("bass");
-
-  chord.forEach(note => {
-    const el = document.querySelector(`#piano .pkey[data-note="${note}"]`);
-    if (el) el.classList.add("active");
-  });
-}
-function clearMiniPiano() {
-  document.querySelectorAll("#piano .pkey")
-    .forEach(k => k.classList.remove("active", "bass"));
 }
 
 initializeApp();
