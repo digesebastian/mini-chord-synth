@@ -354,10 +354,13 @@ function updateKeyChordNames() {
 function addKeys() {
   const keys = document.getElementById("keys");
   for (let i = 0; i < 7; i++) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("chord-key-wrapper");
+    wrapper.style.setProperty('--x', positions[i].x + "%");
+    wrapper.style.setProperty('--y', positions[i].y + "%");
+    
     const k = document.createElement("button");
     k.classList.add("chord-key");
-    k.style.setProperty('--x', positions[i].x + "%");
-    k.style.setProperty('--y', positions[i].y + "%");
     k.addEventListener("mousedown", async () => {
       showKeyPressed(i)
       await play(i)
@@ -366,7 +369,9 @@ function addKeys() {
       showKeyReleased(i)
       releaseChordKey(i)
     })
-    keys.appendChild(k);
+    wrapper.appendChild(k);
+
+    keys.appendChild(wrapper);
   }
 }
 const positions = [
