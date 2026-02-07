@@ -2,8 +2,7 @@ import { scales, scaleNames, scaleMap } from "./scales.js";
 import { Chord } from "./chord.js";
 import { JoyStick } from "./joystick.js"
 import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./joystick-keyboard.js";
-import { Guitar } from "./guitar.js";
-import { setupWorklet } from "./guitar.js";
+import { Guitar, setupWorklet } from "./guitar.js";
 import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
 import { startWaveVisualizer } from "./wave-visualizer.js";
 
@@ -141,7 +140,7 @@ function getScaleToneNames(scale, scaleRootSymbol, scaleSemitones) {
     const b = cScaleSemitonesRotated[i];
     const P = 12;
     const differenceToCScale = ((((a - b) + (P / 2)) % P) + P) % P - (P / 2)
-    
+
     switch (differenceToCScale) {
       case 2:
         sign = '##';
@@ -192,7 +191,7 @@ async function play(scaleDegree) {
   const scale = scales.get(scaleType)
 
   const chord = Chord.createChord(scale, scaleDegree, chordTransform);
-  
+
   const chordSemitones = chord.getSemitones()
     .filter(s => s !== undefined)
     .map(s => (s + scaleSemitones)) // adjust to current scale
@@ -230,7 +229,7 @@ function releaseChordKey(scaleDegree) {
 
 function playSynth(semitones, synth) {
   const nodes = semitones.map(s => getNodeName(s))
-  
+
   const root = nodes[0];
 
   if (nodes.length > 4) {
@@ -415,7 +414,7 @@ function addInstrumentDropdownOptions() {
 }
 
 function addJoystick() {
-  const joyParams = { 
+  const joyParams = {
     "internalFillColor": "#3b4cb3",
     "internalStrokeColor": "#292563",
     "externalStrokeColor": "#2a2a33",
@@ -428,9 +427,9 @@ function addJoystick() {
     if (joystickDirection.value !== chordTransform) {
       joystickDirection.value = chordTransform;
       if (chordIsPlaying()) {
-      // update currently playing chord
-      play(currentlyPlayingStepInScale);
-    }
+        // update currently playing chord
+        play(currentlyPlayingStepInScale);
+      }
     }
   });
 }
@@ -449,8 +448,8 @@ async function initializeApp() {
   startWaveVisualizer(canvas, waveAnalyser);
 
   addKeys();
-  updateScaleChordNames();  
-  renderMiniPiano(6,  1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  updateScaleChordNames();
+  renderMiniPiano(6, 1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
   addScaleRootDropdownOptions();
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
@@ -463,7 +462,7 @@ async function initializeApp() {
     await setupWorklet(ctxt);
     console.log("AudioWorklet successfully loaded.");
 
-  guitar = new Guitar(ctxt);
+    guitar = new Guitar(ctxt);
     await guitar.initializeStrings();
     console.log("Guitar strings initialized");
   } catch (err) {
