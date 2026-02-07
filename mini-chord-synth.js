@@ -199,15 +199,16 @@ async function play(scaleDegree) {
     .map(s => (s + scaleSemitones)) // adjust to current scale
     .map(s => s % 12) // fit all notes in one octave
 
+  const scaleSemitonesPC = scale
+    .map(s => (s + scaleSemitones) % 12);
+
   if (currentInstrument === 'Sines') {
     playSynth(chordSemitones, sineSynth);
   } else if (currentInstrument === 'Sawtooth') {
     playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     guitar.updateChord(chordSemitones);
-    guitar.updateScale(
-      scale.map(s => (s + scaleSemitones) % 12)
-    );
+    guitar.updateScale(scaleSemitonesPC);
   }
 }
 
@@ -272,8 +273,22 @@ document.getElementById("scale-type-select").addEventListener("change", (e) => c
 function changeInstrument(instrument) {
   currentInstrument = instrument;
   document.getElementById("instrument-select-label").textContent = "Instrument: " + instrument;
+  const rhythmContainer = document.getElementById("rhythm-container");
+  if (instrument === "Guitar") {
+    rhythmContainer.classList.remove("hidden");
+    changeRhythm(guitar.currentRhythm);
+    document.getElementById("rhythm-select").value = guitar.currentRhythm;
+  } else {
+    rhythmContainer.classList.add("hidden");
+  }
 }
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
+
+function changeRhythm(rhythmName) {
+  guitar.setRhythm(rhythmName);
+  document.getElementById("rhythm-select-label").textContent = "Rhythm: " + rhythmName.replace(/([A-Z])/g, " $1");
+}
+document.getElementById("rhythm-select").addEventListener("change", e => changeRhythm(e.target.value));
 
 const chordKeys = ["a", "w", "s", "d", "r", "f", "g"];
 async function handleChordKeyDown(e) {
@@ -464,9 +479,17 @@ async function initializeApp() {
     await setupWorklet(ctxt);
     console.log("AudioWorklet successfully loaded.");
 
-  guitar = new Guitar(ctxt);
+    guitar = new Guitar(ctxt);
     await guitar.initializeStrings();
     console.log("Guitar strings initialized");
+    const rhythmSelect = document.getElementById("rhythm-select");
+    Object.keys(guitar.rhythmPatterns).forEach(name => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name.replace(/([A-Z])/g, " $1");
+      rhythmSelect.appendChild(option);
+    });
+    changeInstrument(currentInstrument);
   } catch (err) {
     console.error("error initializing strings:", err);
   }

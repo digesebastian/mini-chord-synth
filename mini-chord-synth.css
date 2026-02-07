@@ -147,21 +147,28 @@ body {
   background-image: linear-gradient(#f2c94c, #b88918);
 }
 
+.control-row {
+  display: flex;
+  gap: 12px;
+}
+
 #controls {
   display: flex;
   flex-direction: row;
   height: 32%;
   width: 100%;
+  gap: 16px;
 }
 
 #controls-1 {
   /* border: #0b0b10 1px solid; */
   flex: 1.25;
-  place-items: center;
+  place-items: flex-start;
   display: flex;
   gap: 10px;
   flex-direction: column;
   padding-top: 40px;
+  padding-left: 60px;
 }
 
 #controls-2 {

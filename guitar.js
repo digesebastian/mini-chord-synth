@@ -160,7 +160,9 @@ export class Guitar {
         this.strings = [];
         this.currentChord = null;
         this.arpIndex = 0;
+        this.pendingRhythmRestart = false;
         this.currentScale = null;
+
 
         this.rhythmPatterns = {
             slowUpDown: ["down", null, "up", null, "down", null, "up", null],
@@ -172,7 +174,7 @@ export class Guitar {
             arpUp:   ["arpUp", "arpUp", "arpUp", "arpUp", "arpUp",   "arpUp", "arpUp", "arpUp"],
             bassTreble: ["bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble"]
             };
-            this.currentRhythm = "bassTreble";          
+            this.currentRhythm = "popRock";          
             this.strumDelay = 0.015; 
 
         // filters
@@ -245,53 +247,60 @@ export class Guitar {
     getStringPitchClass(stringIndex, fret) {
         return (Guitar.openStringPitch[stringIndex] + fret) % 12;
     }
-      
-  
+    
     calculateTriadFrets(chordPitchClasses, maxFret = 12, preferredMaxFret = 5) {
         const frets = [];
-  
+        const usedPitchClasses = new Set();
+      
         for (let string = 0; string < 6; string++) {
-            const openPitch = Guitar.openStringPitch[string];
+            const openPC = Guitar.openStringPitch[string];
             let chosenFret = -1;
-  
-            for (let fret = 0; fret <= preferredMaxFret; fret++) {
-                const notePC = (openPitch + fret) % 12;
-                if (chordPitchClasses.includes(notePC)) {
+      
+            for (let fret = 0; fret <= maxFret; fret++) {
+                const pc = (openPC + fret) % 12;
+                if (!chordPitchClasses.includes(pc)) continue;
+      
+                const isNewTone = !usedPitchClasses.has(pc);
+      
+                if (isNewTone && usedPitchClasses.size === 3 && string < 3) continue;
+
+                if (isNewTone && usedPitchClasses.size === 3 && string >= 3) {
                     chosenFret = fret;
+                    usedPitchClasses.add(pc);
                     break;
                 }
-            }
-  
-            if (chosenFret === -1) {
-                for (let fret = preferredMaxFret + 1; fret <= maxFret; fret++) {
-                    const notePC = (openPitch + fret) % 12;
-                    if (chordPitchClasses.includes(notePC)) {
-                        chosenFret = fret;
-                        break;
-                    }
+      
+                if (fret <= preferredMaxFret && chosenFret === -1) {
+                    chosenFret = fret;
                 }
             }
-  
-            if (chosenFret > preferredMaxFret) chosenFret = -1;
-                frets.push(chosenFret);
+      
+            if (string < 3 && chosenFret > preferredMaxFret) chosenFret = -1;
+      
+            if (chosenFret >= 0) {
+                const pc = (openPC + chosenFret) % 12;
+                usedPitchClasses.add(pc);
+            }
+            frets.push(chosenFret);
         }
         return frets;
     }
-  
+
     updateChord(chordSemitones) {
-        this.arpIndex = 0;
-        if (
-            this.currentChord && JSON.stringify(this.currentChord) === JSON.stringify(chordSemitones)
-        ) {
-            return;
-        }
-  
+        const chordChanged = !this.currentChord || JSON.stringify(this.currentChord) !== JSON.stringify(chordSemitones);
+      
+        if (!chordChanged) return;
         this.currentChord = chordSemitones;
-  
+
+        this.arpIndex = 0;
+        this.pendingRhythmRestart = true;
+
+      
         if (Tone.getTransport().state !== "started") {
             Tone.getTransport().start();
         }
     }
+      
 
     updateScale(scaleSemitones) {
         this.currentScale = scaleSemitones;
@@ -385,37 +394,6 @@ export class Guitar {
         this.arpIndex++;
     }
 
-    // playBassTrebleArp(velocity = 0.6) {
-    //     if (!this.currentChord) return;
-      
-    //     const frets = this.calculateTriadFrets(
-    //         this.currentChord.map(n => n % 12)
-    //     );
-      
-    //     const bassStrings = [0, 1, 2].filter(i => frets[i] >= 0); // bass 
-    //     const trebleStrings = [3, 4, 5].filter(i => frets[i] >= 0); // treble 
-      
-    //     if (bassStrings.length === 0 || trebleStrings.length === 0) return;
-      
-    //     let stringIndex;
-      
-    //     if (this.arpIndex % 4 === 0) {
-    //         stringIndex = bassStrings[Math.floor(this.arpIndex / 4) % bassStrings.length];
-    //     } else {
-    //         stringIndex = trebleStrings[(this.arpIndex - 1) % trebleStrings.length];
-    //     }
-      
-    //     const time = this.context.currentTime;
-    //     const velocityJitter = velocity * (0.85 + Math.random() * 0.2);
-      
-    //     this.strings[stringIndex].pluck(
-    //         time,
-    //         frets[stringIndex],
-    //         velocityJitter
-    //     );
-    //     this.arpIndex++;
-    // }
-
     playBassTrebleArp(velocity = 0.6) {
         if (!this.currentChord || !this.currentScale) return;
 
@@ -474,7 +452,12 @@ export class Guitar {
   
     rhythmScheduler() {
         Tone.getTransport().scheduleRepeat(() => {
-      
+
+            if (this.pendingRhythmRestart) {
+                Tone.getTransport().ticks = 0;
+                this.pendingRhythmRestart = false;
+            }
+
             const pattern = this.rhythmPatterns[this.currentRhythm];
             if (!pattern) return;
       
