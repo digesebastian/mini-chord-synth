@@ -11,8 +11,12 @@
   font-size: large;
   font-weight: bold;
   
-  background-image: radial-gradient(circle, #7771d2, #4f47b8);
+  background: radial-gradient(circle, #7771d2, #4f47b8);
   
+  /* minor QOL for touch devices */ 
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+
   cursor: pointer;
   
   /* make button pop out */ 
@@ -45,7 +49,6 @@ body {
   margin: 0;
   display: flex;
   justify-content: center;
-
 }
 
 #mini-synth {
@@ -101,7 +104,6 @@ body {
     -14px 0 3px -7px rgba(0, 0, 0, .25) inset,
     0 20px 3px -7px rgba(255, 255, 255, .05) inset,
     0 -8px 3px -4px rgba(0, 0, 0, .35) inset;
-
 
   user-select: none;
 }
