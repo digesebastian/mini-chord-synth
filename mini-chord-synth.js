@@ -57,13 +57,10 @@ let currentlyPlayingChord = null;
 
 let currentlyPlayingStepInScale = null;
 
-const activeChordKeys = new Set();
-
 const ctxt = new AudioContext();
 Tone.setContext(ctxt);
 
 let waveAnalyser;
-let waveRafId = null;
 
 // CONTROLLER
 
@@ -457,6 +454,7 @@ function addJoystick() {
     "autoReturnToCenter": true,
   }
   var joystickDirection = document.getElementById("joystick-direction");
+  joystickDirection.value = 'base';
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
