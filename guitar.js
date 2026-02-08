@@ -67,7 +67,8 @@ const karplusProcessorScript = `
                 this.y_history[this.pointer % D] = newSample;
 
                 this.pointer++;
-                this.amplitude *= 0.99997;
+                  this.amplitude *= 0.99997;
+                //this.amplitude *= (this.delayLength > 300 ? 0.99994 : 0.99998);
             }
             return true;
         }
@@ -104,8 +105,13 @@ class GuitarString {
     }
 
     pluck(startTime, fretOffset = 0, velocity = 0.7, detune = 0, isStrum=false){
+        if (!this.node) {
+            console.warn("GuitarString not initialized yet");
+            return;
+        }
         const freq = this.openNoteHz * Math.pow(2, fretOffset / 12);
-        const freqWithDetune = freq * Math.pow(2, detune / 1200);
+        const drift = (Math.random() - 0.5) * 0.8;
+        const freqWithDetune = freq * Math.pow(2, (detune + drift)/ 1200);
         const delayLength = Math.floor(this.Fs / freqWithDetune);
 
         const pickPosition = 0.2 + Math.random() * 0.6; 
@@ -119,8 +125,6 @@ class GuitarString {
             const white = (Math.random() * 2 - 1) * noiseAmount;
           
             if (bassStrings) {
-                //prev = 0.85 * prev + 0.15 * white; 
-                //return env * prev * velocity * 1.8;
                 prev = 0.92 * prev + 0.08 * white;
                 return env * prev * velocity * 1.4;
             } else {
@@ -138,16 +142,6 @@ class GuitarString {
     }
 }
 
-// function makeSaturationCurve(amount = 2.5) {
-//     const n = 44100;
-//     const curve = new Float32Array(n);
-//     for (let i = 0; i < n; i++) {
-//       const x = (i * 2) / n - 1;
-//       curve[i] = Math.tanh(x * amount);
-//     }
-//     return curve;
-//   }
-
 //instrument
 export class Guitar {
 
@@ -161,7 +155,9 @@ export class Guitar {
         this.strings = [];
         this.currentChord = null;
         this.arpIndex = 0;
+        this.pendingRhythmRestart = false;
         this.currentScale = null;
+
 
         this.rhythmPatterns = {
             slowUpDown: ["down", null, "up", null, "down", null, "up", null],
@@ -173,68 +169,38 @@ export class Guitar {
             arpUp:   ["arpUp", "arpUp", "arpUp", "arpUp", "arpUp",   "arpUp", "arpUp", "arpUp"],
             bassTreble: ["bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble", "bassTreble"]
             };
-            this.currentRhythm = "bassTreble";          
+            this.currentRhythm = "popRock";          
             this.strumDelay = 0.015; 
-
-        // filters
-        // this.bodyLow = this.context.createBiquadFilter();
-        // this.bodyLow.type = "lowpass";
-        // this.bodyLow.frequency.value = 1200; //1000 was good //700 was gave a too muffled
-
-        // this.bodyMid = this.context.createBiquadFilter();
-        // this.bodyMid.type = "bandpass";
-        // this.bodyMid.frequency.value = 250;
-        // this.bodyMid.Q.value = 0.9; //1.2
-
-        // this.air = this.context.createBiquadFilter();
-        // this.air.type = "highpass";
-        // this.air.frequency.value = 4500; //5500 //before i tried 3500
-
-        // this.presence = this.context.createBiquadFilter();
-        // this.presence.type = "peaking";
-        // this.presence.frequency.value = 2800; //2500
-        // this.presence.Q.value = 1.0;
-        // this.presence.gain.value = 3.5; //4
-
-        // this.bodyLow.connect(this.bodyMid);
-        // this.bodyMid.connect(this.air);
-
-        //preamp
-        // this.preamp = this.context.createGain();
-        // this.preamp.gain.value = 20.0;
-
-        // //saturation
-        // this.saturation = this.context.createWaveShaper();
-        // this.saturation.curve = makeSaturationCurve(1.2);
-        // this.saturation.oversample = "4x";
-
-        // // compressor
-        // this.compressor = this.context.createDynamicsCompressor();
-        // this.compressor.threshold.value = -30;
-        // this.compressor.ratio.value = 2.5;
-        // this.compressor.attack.value = 0.001;
-        // this.compressor.release.value = 0.2;
 
         // final output
         this.outputNode = this.context.createGain();
-        this.outputNode.gain.value = 0.9;
-        
-        // this.air.disconnect();
-        // this.air.connect(this.presence);
-        // this.presence.connect(this.preamp);
+        this.outputNode.gain.value = 3;
 
-        //signal chain
-        // this.preamp.connect(this.saturation);
-        // this.saturation.connect(this.compressor);
-        // this.compressor.connect(this.outputNode);
-        this.outputNode.connect(this.context.destination);
+        // filters for strumming
+        this.strumBus = this.context.createGain();
+        this.strumBus.gain.value = 0.9;
+
+        this.strumLowpass = this.context.createBiquadFilter();
+        this.strumLowpass.type = "lowpass";
+        this.strumLowpass.frequency.value = 3800; //lower warmer, higher brighter
+
+        this.strumBus.connect(this.strumLowpass).connect(this.outputNode);
+
+        // filter for fingerpicking
+        this.fingerLowpass = this.context.createBiquadFilter();
+        this.fingerLowpass.type = "lowpass";
+        this.fingerLowpass.frequency.value = 8000; // very high cutoff //9000
+        
+        this.fingerLowpass.Q.value = 0.5; //0.3
+        this.fingerLowpass.connect(this.outputNode);
 
     this.rhythmScheduler();
     
-  }
+    }
 
-  clearChord() {
-      this.currentChord = null;
+
+    clearChord() {
+        this.currentChord = null;
     }
   
     async initializeStrings() {
@@ -243,65 +209,66 @@ export class Guitar {
         this.strings = openFrequencies.map(hz => new GuitarString(this.context, hz));
   
         await Promise.all(this.strings.map(s => s.init())); //DSP nodes
-        //this.strings.forEach(s => s.outputNode.connect(this.bodyLow));
-        this.strings.forEach(s => s.outputNode.connect(this.outputNode));
-        //console.log("6 guitar strings initialised");
+        this.strings.forEach(s => s.outputNode.connect(this.fingerLowpass));
     }
 
     getStringPitchClass(stringIndex, fret) {
         return (Guitar.openStringPitch[stringIndex] + fret) % 12;
     }
-      
-  
+    
     calculateTriadFrets(chordPitchClasses, maxFret = 12, preferredMaxFret = 5) {
         const frets = [];
-  
+        const usedPitchClasses = new Set();
+      
         for (let string = 0; string < 6; string++) {
-            const openPitch = Guitar.openStringPitch[string];
+            const openPC = Guitar.openStringPitch[string];
             let chosenFret = -1;
-  
-            for (let fret = 0; fret <= preferredMaxFret; fret++) {
-                const notePC = (openPitch + fret) % 12;
-                if (chordPitchClasses.includes(notePC)) {
+      
+            for (let fret = 0; fret <= maxFret; fret++) {
+                const pc = (openPC + fret) % 12;
+                if (!chordPitchClasses.includes(pc)) continue;
+      
+                const isNewTone = !usedPitchClasses.has(pc);
+      
+                if (isNewTone && usedPitchClasses.size === 3 && string < 3) continue;
+
+                if (isNewTone && usedPitchClasses.size === 3 && string >= 3) {
                     chosenFret = fret;
+                    usedPitchClasses.add(pc);
                     break;
                 }
-            }
-  
-            if (chosenFret === -1) {
-                for (let fret = preferredMaxFret + 1; fret <= maxFret; fret++) {
-                    const notePC = (openPitch + fret) % 12;
-                    if (chordPitchClasses.includes(notePC)) {
-                        chosenFret = fret;
-                        break;
-                    }
+      
+                if (fret <= preferredMaxFret && chosenFret === -1) {
+                    chosenFret = fret;
                 }
             }
-  
-            if (chosenFret > preferredMaxFret) chosenFret = -1;
-                frets.push(chosenFret);
+      
+            if (string < 3 && chosenFret > preferredMaxFret) chosenFret = -1;
+      
+            if (chosenFret >= 0) {
+                const pc = (openPC + chosenFret) % 12;
+                usedPitchClasses.add(pc);
+            }
+            frets.push(chosenFret);
         }
         return frets;
-    }
-  
+    } 
+
     updateChord(chordSemitones) {
-        this.arpIndex = 0;
-        if (
-            this.currentChord && JSON.stringify(this.currentChord) === JSON.stringify(chordSemitones)
-        ) {
-            return;
-        }
-  
         this.currentChord = chordSemitones;
-  
+
+        this.arpIndex = 0;
+        this.pendingRhythmRestart = true;
+
+      
         if (Tone.getTransport().state !== "started") {
             Tone.getTransport().start();
         }
     }
+      
 
     updateScale(scaleSemitones) {
         this.currentScale = scaleSemitones;
-        this.arpIndex = 0;
     }
       
 
@@ -317,13 +284,20 @@ export class Guitar {
             s.outputNode.pan.value = s.outputNode.pan.value;
       
             if (s.node) {
-                s.node.port.postMessage({
-                type: "DAMP"
-            });
+                s.node.port.postMessage({ type: "DAMP" });
             }
         });
     }
-      
+
+    applyToneByVelocity(isStrum, velocity) {
+        if (isStrum) {
+            this.strumLowpass.frequency.value =
+                2800 + velocity * 2200; 
+        } else {
+            this.fingerLowpass.frequency.value =
+                7500 + velocity * 2500; 
+        }
+    }
   
     playStrum(direction = "down", velocity = 0.7) {
         if (!this.currentChord) return;
@@ -343,8 +317,6 @@ export class Guitar {
             if (fret < 0) return;
 
             const time = now + i * this.strumDelay;
-            //const stringVelocity = velocity * (0.7 + Math.random() * 0.4);
-
             const stringWeight = [0.85, 0.95, 1.1, 1.1, 0.95, 0.8];
             const stringVelocity = velocity * stringWeight[stringIndex] * (0.95 + Math.random() * 0.1);
 
@@ -361,6 +333,10 @@ export class Guitar {
                 detune,
                 true
             );
+            this.applyToneByVelocity(true, stringVelocity);
+            this.strings[stringIndex].outputNode.disconnect();
+            this.strings[stringIndex].outputNode.connect(this.strumBus);
+
         });
     }
 
@@ -387,40 +363,12 @@ export class Guitar {
             0,
             false
         );
+        this.applyToneByVelocity(false, velocityJitter);
+        this.strings[stringIndex].outputNode.disconnect();
+        this.strings[stringIndex].outputNode.connect(this.fingerLowpass);
       
         this.arpIndex++;
     }
-
-    // playBassTrebleArp(velocity = 0.6) {
-    //     if (!this.currentChord) return;
-      
-    //     const frets = this.calculateTriadFrets(
-    //         this.currentChord.map(n => n % 12)
-    //     );
-      
-    //     const bassStrings = [0, 1, 2].filter(i => frets[i] >= 0); // bass 
-    //     const trebleStrings = [3, 4, 5].filter(i => frets[i] >= 0); // treble 
-      
-    //     if (bassStrings.length === 0 || trebleStrings.length === 0) return;
-      
-    //     let stringIndex;
-      
-    //     if (this.arpIndex % 4 === 0) {
-    //         stringIndex = bassStrings[Math.floor(this.arpIndex / 4) % bassStrings.length];
-    //     } else {
-    //         stringIndex = trebleStrings[(this.arpIndex - 1) % trebleStrings.length];
-    //     }
-      
-    //     const time = this.context.currentTime;
-    //     const velocityJitter = velocity * (0.85 + Math.random() * 0.2);
-      
-    //     this.strings[stringIndex].pluck(
-    //         time,
-    //         frets[stringIndex],
-    //         velocityJitter
-    //     );
-    //     this.arpIndex++;
-    // }
 
     playBassTrebleArp(velocity = 0.6) {
         if (!this.currentChord || !this.currentScale) return;
@@ -466,6 +414,10 @@ export class Guitar {
             frets[stringIndex],
             velocityJitter
         );
+        this.applyToneByVelocity(false, velocityJitter);
+        this.strings[stringIndex].outputNode.disconnect();
+        this.strings[stringIndex].outputNode.connect(this.fingerLowpass);
+
         this.arpIndex++;
       }
 
@@ -480,7 +432,12 @@ export class Guitar {
   
     rhythmScheduler() {
         Tone.getTransport().scheduleRepeat(() => {
-      
+
+            if (this.pendingRhythmRestart) {
+                Tone.getTransport().ticks = 0;
+                this.pendingRhythmRestart = false;
+            }
+
             const pattern = this.rhythmPatterns[this.currentRhythm];
             if (!pattern) return;
       
@@ -508,4 +465,5 @@ export class Guitar {
     }
 }
   
+
 
