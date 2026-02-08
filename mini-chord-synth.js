@@ -502,7 +502,7 @@ async function initializeApp() {
 
   addKeys();
   updateScaleChordNames();
-  renderMiniPiano(6, 1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  renderMiniPiano(6, 1);  
   renderMiniGuitar(5);
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
