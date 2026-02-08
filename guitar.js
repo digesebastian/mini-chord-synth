@@ -198,11 +198,6 @@ export class Guitar {
     
     }
 
-
-    clearChord() {
-        this.currentChord = null;
-    }
-  
     async initializeStrings() {
         const openFrequencies =
         Guitar.openStringMidi.map(m => this.midiToHz(m));
