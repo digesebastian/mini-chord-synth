@@ -60,6 +60,7 @@ let currentlyPlayingStepInScale = null;
 const activeChordKeys = new Set();
 
 const ctxt = new AudioContext();
+Tone.setContext(ctxt);
 
 let waveAnalyser;
 let waveRafId = null;
@@ -76,6 +77,7 @@ function initializeAudioContext() {
   }).connect(gain)
 
   waveAnalyser = new Tone.Analyser("waveform", 1024);
+  Tone.getDestination().connect(waveAnalyser);
 
   // compressor -> gain -> destination
   compressor.connect(gain);
@@ -207,9 +209,11 @@ async function play(scaleDegree) {
     playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     const frets = guitar.calculateTriadFrets(chordSemitones, 12, 5);
-    setMiniGuitarFromFrets(frets, chordSemitones[0], Guitar.OPEN_STRING_PITCH);
+    //setMiniGuitarFromFrets(frets, chordSemitones[0], Guitar.OPEN_STRING_PITCH);
+    setMiniGuitarFromFrets(frets);
     guitar.updateChord(chordSemitones);
     guitar.updateScale(scaleSemitonesPC);
+    currentlyPlayingChord = chordSemitones;
   }
 }
 
@@ -278,15 +282,21 @@ document.getElementById("scale-type-select").addEventListener("change", (e) => c
 
 function changeInstrument(instrument) {
   currentInstrument = instrument;
+
+  document.getElementById("instrument-select-label").textContent =
+    "Instrument: " + instrument;
+
   updateInstrumentUI(instrument);
   const rhythmContainer = document.getElementById("rhythm-container");
   if (instrument === "Guitar") {
     rhythmContainer.classList.remove("hidden");
-    changeRhythm(guitar.currentRhythm);
+  if (guitar) {
     document.getElementById("rhythm-select").value = guitar.currentRhythm;
-  } else {
-    rhythmContainer.classList.add("hidden");
+    changeRhythm(guitar.currentRhythm);
   }
+} else {
+  rhythmContainer.classList.add("hidden");
+}
 }
 
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
@@ -456,8 +466,7 @@ function addJoystick() {
     if (joystickDirection.value !== chordTransform) {
       joystickDirection.value = chordTransform;
       if (chordIsPlaying()) {
-        // update currently playing chord
-        play(currentlyPlayingStepInScale);
+          play(currentlyPlayingStepInScale);
       }
     }
   });
@@ -498,6 +507,10 @@ async function initializeApp() {
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
   addInstrumentDropdownOptions();
+
+  document.getElementById("instrument-select").value = currentInstrument;
+  updateInstrumentUI(currentInstrument);
+
   updateInstrumentUI(currentInstrument);
   addJoystick();
 
@@ -506,10 +519,14 @@ async function initializeApp() {
     console.log("Starting AudioWorklet setup.");
     await setupWorklet(ctxt);
     console.log("AudioWorklet successfully loaded.");
-
     guitar = new Guitar(ctxt);
     await guitar.initializeStrings();
     console.log("Guitar strings initialized");
+
+
+    Tone.connect(guitar.outputNode, Tone.getDestination());
+
+
     const rhythmSelect = document.getElementById("rhythm-select");
     Object.keys(guitar.rhythmPatterns).forEach(name => {
       const option = document.createElement("option");
@@ -517,10 +534,13 @@ async function initializeApp() {
       option.textContent = name.replace(/([A-Z])/g, " $1");
       rhythmSelect.appendChild(option);
     });
+
     changeInstrument(currentInstrument);
+
   } catch (err) {
     console.error("error initializing strings:", err);
   }
 }
 
 initializeApp();
+
