@@ -274,6 +274,13 @@ body {
 
 #controls-2 {
   flex: 0.5;
+  padding-top: 40px;
+}
+
+#controls-2 .control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 #controls-3 {
