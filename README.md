@@ -7,8 +7,8 @@ Multiple sound engines are provided to emphasise different musical characters. A
 Visual feedback is given for each sound engine. Synthetised chords are displayed on a piano highlighting both chord tones and the bass note, while for the guitar the chords are visualised on a guitar fretboard.
  
 ### How to use it?
-The synthesizer runs entirely in the browser and can be accessed here:
-https://digesebastian.github.io/mini-chord-synth/
+The synthesizer runs entirely in the browser and can be accessed [here](https://digesebastian.github.io/mini-chord-synth/)
+
 To use it, a preferred root note and scale type can first be selected from the dropdown menus. An instrument can then be chosen between sine waves, sawtooth waves, and guitar. The chords are displayed on the buttons and update automatically when the scale or root note changes.
 Chords can be played either with the mouse or by using the “A W S D R F G” keys on the keyboard. Holding a key sustains the chord; releasing it stops playback. The joystick can be controlled with the mouse or using the direction keys on the keyboard. Different directions apply different chord transformations, which can be seen on the screen below it.
 The notes of the chords being played are displayed on the mini piano or mini guitar visualizations.
@@ -29,24 +29,18 @@ The other chord transformations do not follow the scale, but are included to giv
 
 
 ### Chord transformations / joystick
-All credit to the design/functionality joystick goes to https://github.com/bobboteck/JoyStick
+All credit to the design/functionality joystick goes to [bobboteck](https://github.com/bobboteck/JoyStick)
 
 The following chord transformations are available (in terms of direction of joystick, e.g. N = north = up)
 
-N = maj/min (Turns major and augmented base chords into minor, and minor and diminished chords into major)
-
-NE = dominant 7th
-
-E = min/maj 7th (Major or minor depends on which 7th note fits the scale)
-
-SE = min/maj 9th (Also adds a 7th note. Major or minor depends on which 9th note fits the scale)
-S = sus4 (Suspended 4th)
-
-SW = sus2 (Suspended 2nd)
-
-W = diminished (If base chord is diminished, it is turned into a minor)
-
-NW = augmented (If base chord is augmented, it is turned into a major)
+- N = maj/min (Turns major and augmented base chords into minor, and minor and diminished chords into major)
+- NE = dominant 7th
+- E = min/maj 7th (Major or minor depends on which 7th note fits the scale)
+- SE = min/maj 9th (Also adds a 7th note. Major or minor depends on which 9th note fits the scale)
+- S = sus4 (Suspended 4th)
+- SW = sus2 (Suspended 2nd)
+- W = diminished (If base chord is diminished, it is turned into a minor)
+- NW = augmented (If base chord is augmented, it is turned into a major)
 
 
 ### Guitar Algorithm
@@ -54,24 +48,22 @@ The guitar sound is generated using a physically inspired string model based on 
 Pitch is defined by the delay-line length (computed from string frequency and audio sample rate), and sound is produced by a feedback loop that continuously averages past samples, simulating wave propagation and energy loss along a real string. The initial excitation is shaped using a pluck-position envelope, which simulates where along the string the player plucks. Subtle micro detuning is applied per string and per pluck to emulate imperfect tuning, finger pressure, and string stiffness, preventing digital sounding tones.
 To improve realism the guitar uses a DSP pipeline: each string passes through a stereo panner for spatial placement, and is routed dynamically through different signal paths depending on playing technique. Fingerpicking uses a clean, high-cutoff low-pass filter to preserve clarity, while strumming is routed through a separate bus with additional low-pass filtering to tame harsh transients and simulate the natural smoothing of a guitar body. A configurable strum delay introduces a small time offset between strings, recreating the physical motion of a human strum. The system supports chord voicings based on pitch classes, scale awareness, and rhythmic patterns driven by Tone.Transport.
 
-The karplus-strong algorithm was coded using this example:
-https://www.mathworks.com/help/signal/ug/generate-guitar-chords-using-the-karplus-strong-algorithm.html
-https://nl.mathworks.com/help/matlab/ref/filter.html 
+The karplus-strong algorithm was coded using this [matlab's example](https://www.mathworks.com/help/signal/ug/generate-guitar-chords-using-the-karplus-strong-algorithm.html).
  
 ### Code Structure
-index.html → main entry
-mini-chord-synth.js → core application logic 
-mini-chord-synth.css → user interface styling 
-chord.js → chord construction and transformation
-scales.js → scales definition and mapping 
-guitar.js → guitar synthesis 
-mini-guitar.js → guitar fretboard visualisation
-minipiano.js → piano visualisation
-joystick.js → joystick implementation 
-joystick-keyboard.js → keyboard controls for joystick
-wave-visualiser.js → audio waveform visualisation
+- index.html → root html file
+- mini-chord-synth.js → core application logic 
+- mini-chord-synth.css → user interface styling 
+- chord.js → chord construction and transformation
+- scales.js → scales definition and mapping 
+- guitar.js → guitar synthesis 
+- mini-guitar.js → guitar fretboard visualisation
+- minipiano.js → piano visualisation
+- joystick.js → joystick implementation 
+- joystick-keyboard.js → keyboard controls for joystick
+- wave-visualiser.js → audio waveform visualisation
 
 
 ### Documentation:
-https://hichord.shop
-https://tonejs.github.io/docs/15.1.22/modules.html 
+- https://hichord.shop
+- https://tonejs.github.io/docs/15.1.22/modules.html 
