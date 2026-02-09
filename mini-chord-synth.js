@@ -15,6 +15,7 @@ import * as Tone from 'https://esm.sh/tone';
 
 const NODE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
+// Translates joystick positions to chord transformations
 const TRANSFORMATION_MAP = new Map([
   ['C', 'base'],
   ['N', 'maj/min'],
@@ -39,7 +40,7 @@ let sineSynth;
 
 let sawSynth;
 
-let scaleSemitones = 0;
+let scaleSemitones = 0; // How many semitones the root of the current scale is above C
 
 let scaleRootSymbol = 'C';
 
@@ -65,6 +66,7 @@ let waveAnalyser;
 // CONTROLLER
 
 function initializeAudioContext() {
+  // gain -> destination
   const gain = new Tone.Gain(0.4).toDestination()
   const compressor = new Tone.Compressor({
     threshold: -18,
@@ -74,14 +76,15 @@ function initializeAudioContext() {
   }).connect(gain)
 
   waveAnalyser = new Tone.Analyser("waveform", 1024);
-  Tone.getDestination().connect(waveAnalyser);
+  Tone.getDestination().connect(waveAnalyser); // connects guitar to analyzer
 
-  // compressor -> gain -> destination
+  // compressor -> gain
   compressor.connect(gain);
 
-  // send the signal to analyser
+  // compressor -> wave analyser
   compressor.connect(waveAnalyser);
 
+  // synths -> compressor
   sineSynth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
       attack: 0.2,
@@ -103,6 +106,7 @@ function initializeAudioContext() {
   }).connect(compressor);
 }
 
+// updates chord names on chord keys
 function updateScaleChordNames() {
   const scale = scales.get(scaleType);
   const scaleToneNames = getScaleToneNames(scale, scaleRootSymbol, scaleSemitones);
@@ -117,6 +121,7 @@ function updateScaleChordNames() {
   updateKeyChordNames();
 }
 
+// algorithm to compute chord names from the current scale
 function getScaleToneNames(scale, scaleRootSymbol, scaleSemitones) {
   const cScale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   const cScaleSemitones = [0, 2, 4, 5, 7, 9, 11];
@@ -178,6 +183,7 @@ function toShortFormChordQuality(chordQuality) {
 }
 
 function getNodeName(semitones) {
+  // Places nodes in 4th octave
   return NODE_NAMES[semitones] + '4'
 }
 
@@ -244,12 +250,15 @@ function playSynth(semitones, synth) {
     nodes.shift();
   }
 
+  // add a bass tone
   const bass = root.replace(/4/g, '3');
   const chord = [bass].concat(nodes)
 
   let nodesToPlay = chord;
   if (chordIsPlaying()) {
+    //  play new notes if not in the currently playing chord 
     nodesToPlay = nodesToPlay.filter(n => !currentlyPlayingChord.includes(n));
+    // release notes in the currently playing chord if not in new chord
     const nodesToRelease = currentlyPlayingChord.filter(n => !chord.includes(n));
     synth.triggerRelease(nodesToRelease);
   }
@@ -382,13 +391,23 @@ function updateKeyChordNames() {
   }
 }
 
+
+const chordKeyPositions = [
+  { x: 14, y: 50 },
+  { x: 32, y: 27 },
+  { x: 32, y: 73 },
+  { x: 50, y: 50 },
+  { x: 68, y: 27 },
+  { x: 68, y: 73 },
+  { x: 86, y: 50 }
+];
 function addKeys() {
   const keys = document.getElementById("keys");
   for (let i = 0; i < 7; i++) {
     const wrapper = document.createElement("div");
     wrapper.classList.add("chord-key-wrapper");
-    wrapper.style.setProperty('--x', positions[i].x + "%");
-    wrapper.style.setProperty('--y', positions[i].y + "%");
+    wrapper.style.setProperty('--x', chordKeyPositions[i].x + "%");
+    wrapper.style.setProperty('--y', chordKeyPositions[i].y + "%");
 
     const k = document.createElement("button");
     k.classList.add("chord-key");
@@ -405,15 +424,6 @@ function addKeys() {
     keys.appendChild(wrapper);
   }
 }
-const positions = [
-  { x: 14, y: 50 },
-  { x: 32, y: 27 },
-  { x: 32, y: 73 },
-  { x: 50, y: 50 },
-  { x: 68, y: 27 },
-  { x: 68, y: 73 },
-  { x: 86, y: 50 }
-];
 
 function addScaleRootDropdownOptions() {
   const dropdown = document.getElementById("scale-root-select")
@@ -457,10 +467,12 @@ function addJoystick() {
   joystickDirection.value = 'base';
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
+    // callback when the position of the joystick is changed
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
     if (joystickDirection.value !== chordTransform) {
       joystickDirection.value = chordTransform;
       if (chordIsPlaying()) {
+        // update currently playing chord
         play(currentlyPlayingStepInScale);
       }
     }
@@ -484,12 +496,14 @@ function updateInstrumentUI(instrument) {
 }
 
 async function initializeApp() {
+  // resume audio context when user clicks anywhere
   document.addEventListener("click", async () => {
     if (ctxt.state === "suspended") {
       await ctxt.resume();
       console.log("AudioContext resumed");
     }
   }, { once: true });
+  
   initializeAudioContext()
 
   const canvas = document.getElementById("waveviz");

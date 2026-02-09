@@ -1,3 +1,4 @@
+// Scales are simply coded as an array containing how far (in semitones) each step of the scale is from the root
 const majorScale = [0, 2, 4, 5, 7, 9, 11];
 
 const minorScale = [0, 2, 3, 5, 7, 8, 10];

@@ -47,12 +47,15 @@ export class Chord {
                 chord.seventh = chord.root + 10
                 break;
             case 'maj/min 7th':
+                // Use scale to determine the right 7th
                 chord.seventh = scale[(degree + 6) % 7]
                 break;
             case 'maj/min 9th':
+                // Use scale to determine the right 7th
                 chord.seventh = scale[(degree + 6) % 7]
                 if (chord.chordName === 'maj' || chord.chordName === 'min') {
                     // does not add 9 for dim and aug chords
+                    // Use scale to determine the right 9th
                     chord.ninth = scale[(degree + 8) % 7]
                 }
                 break;
@@ -110,7 +113,6 @@ export class Chord {
 
     static getTriad(scale, degree) {
         // Using two octaves in order to have the third and fifth above the root
-        // Could probably be done more elegantly
         const secondOctave = scale.map(num => num + 12);
         const twoOctaves = scale.concat(secondOctave); 
 
@@ -122,6 +124,7 @@ export class Chord {
     }
 
     static getChordName(triad) {
+        // determine which type of chord the triad is, using the intervals between the root and the third/fifth
         const thirdInterval = triad[1] - triad[0]
         const fifthInterval = triad[2] - triad[0]
 
