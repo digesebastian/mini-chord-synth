@@ -64,7 +64,8 @@ The karplus-strong algorithm was coded using this [matlab's example](https://www
 - wave-visualiser.js → audio waveform visualisation
 
 ### Note 
-There is a problem with firefox audio engine, please try on any other server.
+- There is a problem with firefox audio engine, please try on any other server.
+- Small issues with clickign and dragging on the button 
 
 
 ### Documentation:
