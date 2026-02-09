@@ -6,44 +6,49 @@ import * as Tone from 'https://esm.sh/tone';
 // DSP: sample-by-sample IIR filtering (mimicking MATLAB filter funct.)
 // check https://nl.mathworks.com/help/matlab/ref/filter.html 
 
+// defining DSP node, generation of sound: runs inside the AudioWorklet  
 const karplusProcessorScript = `
     class KarplusProcessor extends AudioWorkletProcessor {
         constructor(options) {
             super(options);
 
-            this.y_history = new Float32Array(2000).fill(0); // buffer
-            this.delayLength = 0; //string length (pitch)
-            this.amplitude = 0;
-            this.pointer = 0;
+            this.y_history = new Float32Array(2000).fill(0); //circular buffer storing past samples (delay line)
+            this.delayLength = 0; //actual string (defines pitch -> frequency = sampleRate / delayLength)
+            this.amplitude = 0; //energy of the string
+            this.pointer = 0; //index into the delay buffer
 
-            this.port.onmessage = (e) => {
+            //receives messages from GuitarString.pluck()
+            this.port.onmessage = (e) => { 
                 if (e.data.type === 'PLUCK') {
-                    const zi = e.data.zi;
+                    const zi = e.data.zi; //excitation buffer
                     this.delayLength = e.data.delayLength;
                     
+                    // initialising the vibrating string (as matlab's filter(1, [1 -1], zi))
                     for (let i = 0; i < zi.length; i++) {
-                    this.y_history[i] = zi[i]; // as matlab's filter(1, [1 -1], zi)
+                    this.y_history[i] = zi[i];
                     }
               
                     this.amplitude = e.data.velocity || 1.0;
                     this.pointer = 0;
                 }
 
-                if (e.data.type === 'DAMP') {
+                if (e.data.type === 'DAMP') { //silence the string
                     this.amplitude = 0;
                 }
             };
               
         }
 
-        process(inputs, outputs) {  //audio processing loop
+        //DSP loop
+        process(inputs, outputs) { 
             const output = outputs[0];
-            const outChannel = output[0];
+            const outChannel = output[0]; //actual audiobuffer
             if (this.amplitude <= 0.0001 || this.delayLength === 0) return true;
 
+            // sample loop
             for (let n=0; n < outChannel.length; n++) {
                 const D = this.delayLength;
-                // feedback 
+                // feedback  : low-pass averaging filter 
                 const idx1 = (this.pointer) % D;
                 const idx2 = (this.pointer + 1) % D;
 
@@ -52,23 +57,23 @@ const karplusProcessorScript = `
 
                 let newSample;
 
-                if (this.delayLength > 300) { // Low E, A strings //280
+                // for E and A strings, uses 3-point averaging (heavily damps high frequencies, 
+                //makes bass strings warmer and less noisy
+                if (this.delayLength > 300) { // Low E, A strings ( delayLength = sampleRate / frequency)
                     const y0 = this.y_history[idx1];
                     const y1 = this.y_history[idx2];
                     const y2 = this.y_history[(this.pointer + 2) % D];
                     newSample = (y0 + y1 + y2) / 3; 
-                } else if (this.delayLength > 200) { // D string
-                    newSample = (this.y_history[idx1] + this.y_history[idx2]) * 0.5;
-                } else { // G, B, high E
+                } else { // D, G, B, high E
                     newSample = (this.y_history[idx1] + this.y_history[idx2]) * 0.5;
                 }
 
+                // sample to output
                 outChannel[n] = newSample * this.amplitude;
                 this.y_history[this.pointer % D] = newSample;
 
                 this.pointer++;
-                  this.amplitude *= 0.99997;
-                //this.amplitude *= (this.delayLength > 300 ? 0.99994 : 0.99998);
+                this.amplitude *= 0.99997; //exponential decay
             }
             return true;
         }
@@ -81,58 +86,63 @@ export function setupWorklet(audioContext) {
   if (!workletLoadPromise) {
     const blob = new Blob([karplusProcessorScript], { type: 'application/javascript' })
     const url = URL.createObjectURL(blob);
-    workletLoadPromise = audioContext.audioWorklet.addModule(url);
+    workletLoadPromise = audioContext.audioWorklet.addModule(url); //loads the processor into the AudioWorklet
   }
   return workletLoadPromise;
 }
 
-// (one string)
+// represents one guitar string (pitch, excitation, DSP node, stereo panning)
 class GuitarString {
     constructor(audioCtx, openNoteHz) {
         this.audioCtx = audioCtx;
         this.openNoteHz = openNoteHz; // freq of the open string
-        this.Fs = audioCtx.sampleRate; // sampling freq.
+        this.Fs = audioCtx.sampleRate; // sampling frequency
 
         this.node = null;
+
+        //stereo placement per string (low strings slightly left, high strings slightly right)
         this.outputNode = audioCtx.createStereoPanner();
         this.outputNode.pan.value = 0;
     }
 
-    //vibrating string
+    //creates one processor per string 
     async init() {
         this.node = new AudioWorkletNode(this.audioCtx, 'karplus-processor');
         this.node.connect(this.outputNode);
     }
 
+    //main excitation function
     pluck(startTime, fretOffset = 0, velocity = 0.7, detune = 0, isStrum=false){
-        if (!this.node) {
-            console.warn("GuitarString not initialized yet");
-            return;
-        }
-        const freq = this.openNoteHz * Math.pow(2, fretOffset / 12);
+        const freq = this.openNoteHz * Math.pow(2, fretOffset / 12); //fret offset to frequency
+
+        //micro detuning
         const drift = (Math.random() - 0.5) * 0.8;
         const freqWithDetune = freq * Math.pow(2, (detune + drift)/ 1200);
         const delayLength = Math.floor(this.Fs / freqWithDetune);
 
+
+        //
         const pickPosition = 0.2 + Math.random() * 0.6; 
         const bassStrings = this.openNoteHz < 150; //(E2, A2, D3)
         let prev = 0;
 
-        const zi = new Float32Array(delayLength).map((_, i) => { //excitationBuffer
+        //excitation buffer: initial noise burst 
+        const zi = new Float32Array(delayLength).map((_, i) => { 
             const x = i / delayLength;
             const env = Math.sin(Math.PI * x * pickPosition);
-            const noiseAmount = isStrum ? 0.4 : 1.0;
-            const white = (Math.random() * 2 - 1) * noiseAmount;
+            const noiseAmount = isStrum ? 0.4 : 1.0; //less noise for strumming
+            const white = (Math.random() * 2 - 1) * noiseAmount; //white noise
           
-            if (bassStrings) {
+            if (bassStrings) { // low-pass filtered noise for bass strings
                 prev = 0.92 * prev + 0.08 * white;
                 return env * prev * velocity * 1.4;
-            } else {
+            } else { // brighter noise for treble strings
                 prev = 0.7 * prev + 0.3 * white;
                 return env * prev * velocity;
             }
         });
           
+        // sending excitation signal to the DSP thread
         this.node.port.postMessage({
             type: 'PLUCK',
             zi: zi,
@@ -142,10 +152,10 @@ class GuitarString {
     }
 }
 
-//instrument
+//guitar instrument (manages strings, chords, rhythm, filters)
 export class Guitar {
 
-    static openStringMidi = [40, 45, 50, 55, 59, 64];
+    static openStringMidi = [40, 45, 50, 55, 59, 64]; //standard tuning frequencies 
     static openStringPitch = Guitar.openStringMidi.map(m => (m % 12));
   
     constructor(audioContext) {
@@ -153,12 +163,12 @@ export class Guitar {
         this.midiToHz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
   
         this.strings = [];
-        this.currentChord = null;
         this.arpIndex = 0;
-        this.pendingRhythmRestart = false;
+        this.currentChord = null;
         this.currentScale = null;
+        this.pendingRhythmRestart = false;
 
-
+        // 8-step pattern 
         this.rhythmPatterns = {
             slowUpDown: ["down", null, "up", null, "down", null, "up", null],
             fastUpDown: ["down", "up", "down", "up", "down", "up", "down", "up"],
@@ -172,11 +182,11 @@ export class Guitar {
             this.currentRhythm = "popRock";          
             this.strumDelay = 0.015; 
 
-        // final output
+        // master gain for guitar
         this.outputNode = this.context.createGain();
         this.outputNode.gain.value = 3;
 
-        // filters for strumming
+        // intermediate bus for strumming
         this.strumBus = this.context.createGain();
         this.strumBus.gain.value = 0.9;
 
@@ -194,30 +204,31 @@ export class Guitar {
         this.fingerLowpass.Q.value = 0.5; //0.3
         this.fingerLowpass.connect(this.outputNode);
 
-    this.rhythmScheduler();
-    
+        // starts the rhythm engine
+        this.rhythmScheduler();
     }
 
     async initializeStrings() {
-        const openFrequencies =
-        Guitar.openStringMidi.map(m => this.midiToHz(m));
-        this.strings = openFrequencies.map(hz => new GuitarString(this.context, hz));
+        const openFrequencies = Guitar.openStringMidi.map(m => this.midiToHz(m)); //converts tuning to Hz
+        this.strings = openFrequencies.map(hz => new GuitarString(this.context, hz)); //creates 6 strings
   
-        await Promise.all(this.strings.map(s => s.init())); //DSP nodes
+        await Promise.all(this.strings.map(s => s.init())); //DSP nodes  for each string
         this.strings.forEach(s => s.outputNode.connect(this.fingerLowpass));
     }
 
+    // Pitch class of the open string
     getStringPitchClass(stringIndex, fret) {
         return (Guitar.openStringPitch[stringIndex] + fret) % 12;
-    }
+    } 
     
+    //chord voicing
     calculateTriadFrets(chordPitchClasses, maxFret = 12, preferredMaxFret = 5) {
         const frets = [];
-        const usedPitchClasses = new Set();
+        const usedPitchClasses = new Set(); //tracks used chord tones
       
         for (let string = 0; string < 6; string++) {
             const openPC = Guitar.openStringPitch[string];
-            let chosenFret = -1;
+            let chosenFret = -1; //string muted by default 
       
             for (let fret = 0; fret <= maxFret; fret++) {
                 const pc = (openPC + fret) % 12;
@@ -225,9 +236,9 @@ export class Guitar {
       
                 const isNewTone = !usedPitchClasses.has(pc);
       
-                if (isNewTone && usedPitchClasses.size === 3 && string < 3) continue;
+                if (isNewTone && usedPitchClasses.size === 3 && string < 3) continue; //skip introducing a 4th tone for bass strings
 
-                if (isNewTone && usedPitchClasses.size === 3 && string >= 3) {
+                if (isNewTone && usedPitchClasses.size === 3 && string >= 3) { //allow adding a 4th tone
                     chosenFret = fret;
                     usedPitchClasses.add(pc);
                     break;
@@ -249,6 +260,7 @@ export class Guitar {
         return frets;
     } 
 
+    // updates harmony 
     updateChord(chordSemitones) {
         this.currentChord = chordSemitones;
 
@@ -261,12 +273,11 @@ export class Guitar {
         }
     }
       
-
     updateScale(scaleSemitones) {
         this.currentScale = scaleSemitones;
     }
       
-
+    // clears strings
     stop() {
         this.currentChord = null;
       
@@ -284,6 +295,7 @@ export class Guitar {
         });
     }
 
+    //
     applyToneByVelocity(isStrum, velocity) {
         if (isStrum) {
             this.strumLowpass.frequency.value =
@@ -294,6 +306,7 @@ export class Guitar {
         }
     }
   
+    // multi string strum
     playStrum(direction = "down", velocity = 0.7) {
         if (!this.currentChord) return;
   
@@ -309,9 +322,9 @@ export class Guitar {
   
         indices.forEach((stringIndex, i) => {
             const fret = frets[stringIndex];
-            if (fret < 0) return;
+            if (fret < 0) return; //skips muted strings
 
-            const time = now + i * this.strumDelay;
+            const time = now + i * this.strumDelay; //human-like time differences
             const stringWeight = [0.85, 0.95, 1.1, 1.1, 0.95, 0.8];
             const stringVelocity = velocity * stringWeight[stringIndex] * (0.95 + Math.random() * 0.1);
 
@@ -428,6 +441,7 @@ export class Guitar {
     rhythmScheduler() {
         Tone.getTransport().scheduleRepeat(() => {
 
+            // syncs rhythm to chord changes
             if (this.pendingRhythmRestart) {
                 Tone.getTransport().ticks = 0;
                 this.pendingRhythmRestart = false;
