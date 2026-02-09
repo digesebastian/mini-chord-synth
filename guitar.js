@@ -208,10 +208,6 @@ export class Guitar {
         this.rhythmScheduler();
     }
 
-    clearChord() {
-        this.currentChord = null;
-    }
-  
     async initializeStrings() {
         const openFrequencies = Guitar.openStringMidi.map(m => this.midiToHz(m)); //converts tuning to Hz
         this.strings = openFrequencies.map(hz => new GuitarString(this.context, hz)); //creates 6 strings

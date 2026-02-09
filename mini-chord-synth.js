@@ -5,7 +5,7 @@ import { isKeyForJoystick, handleJoystickKeydown, handleJoystickKeyup } from "./
 import { Guitar, setupWorklet } from "./guitar.js";
 import { renderMiniPiano, setMiniPianoActive, clearMiniPiano } from "./minipiano.js";
 import { startWaveVisualizer } from "./wave-visualizer.js";
-import { renderMiniGuitar,  clearMiniGuitar, setMiniGuitarFromFrets } from "./mini-guitar.js";
+import { renderMiniGuitar, clearMiniGuitar, setMiniGuitarFromFrets } from "./mini-guitar.js";
 
 import * as Tone from 'https://esm.sh/tone';
 
@@ -57,13 +57,10 @@ let currentlyPlayingChord = null;
 
 let currentlyPlayingStepInScale = null;
 
-const activeChordKeys = new Set();
-
 const ctxt = new AudioContext();
 Tone.setContext(ctxt);
 
 let waveAnalyser;
-let waveRafId = null;
 
 // CONTROLLER
 
@@ -209,7 +206,6 @@ async function play(scaleDegree) {
     playSynth(chordSemitones, sawSynth);
   } else if (currentInstrument === 'Guitar') {
     const frets = guitar.calculateTriadFrets(chordSemitones, 12, 5);
-    //setMiniGuitarFromFrets(frets, chordSemitones[0], Guitar.OPEN_STRING_PITCH);
     setMiniGuitarFromFrets(frets);
     guitar.updateChord(chordSemitones);
     guitar.updateScale(scaleSemitonesPC);
@@ -227,17 +223,15 @@ function releaseChordKey(scaleDegree) {
     sineSynth.triggerRelease(currentlyPlayingChord);
   } else if (currentInstrument === 'Sawtooth') {
     sawSynth.triggerRelease(currentlyPlayingChord);
-  } if (currentInstrument === 'Guitar' && guitar) {
-    guitar.stop();
   }
-  currentlyPlayingChord = null;
-  currentlyPlayingStepInScale = null;
   if (currentInstrument === "Guitar") {
     clearMiniGuitar();
-    guitar.clearChord();
+    guitar.stop();
   } else {
     clearMiniPiano();
   }
+  currentlyPlayingChord = null;
+  currentlyPlayingStepInScale = null;
 }
 
 function playSynth(semitones, synth) {
@@ -287,18 +281,18 @@ function changeInstrument(instrument) {
     "Instrument: " + instrument;
 
   updateInstrumentUI(instrument);
+
   const rhythmContainer = document.getElementById("rhythm-container");
   if (instrument === "Guitar") {
     rhythmContainer.classList.remove("hidden");
-  if (guitar) {
-    document.getElementById("rhythm-select").value = guitar.currentRhythm;
-    changeRhythm(guitar.currentRhythm);
+    if (guitar) {
+      document.getElementById("rhythm-select").value = guitar.currentRhythm;
+      changeRhythm(guitar.currentRhythm);
+    }
+  } else {
+    rhythmContainer.classList.add("hidden");
   }
-} else {
-  rhythmContainer.classList.add("hidden");
 }
-}
-
 document.getElementById("instrument-select").addEventListener("change", (e) => changeInstrument(e.target.value))
 
 function changeRhythm(rhythmName) {
@@ -395,7 +389,7 @@ function addKeys() {
     wrapper.classList.add("chord-key-wrapper");
     wrapper.style.setProperty('--x', positions[i].x + "%");
     wrapper.style.setProperty('--y', positions[i].y + "%");
-    
+
     const k = document.createElement("button");
     k.classList.add("chord-key");
     k.addEventListener("pointerdown", async () => {
@@ -460,13 +454,14 @@ function addJoystick() {
     "autoReturnToCenter": true,
   }
   var joystickDirection = document.getElementById("joystick-direction");
+  joystickDirection.value = 'base';
   var joystickDivId = 'joy-div';
   joy = new JoyStick(joystickDivId, joyParams, function (stickData) {
     chordTransform = TRANSFORMATION_MAP.get(stickData.cardinalDirection);
     if (joystickDirection.value !== chordTransform) {
       joystickDirection.value = chordTransform;
       if (chordIsPlaying()) {
-          play(currentlyPlayingStepInScale);
+        play(currentlyPlayingStepInScale);
       }
     }
   });
@@ -502,7 +497,7 @@ async function initializeApp() {
 
   addKeys();
   updateScaleChordNames();
-  renderMiniPiano(6, 1);   //6,1 since all chords are in 4th octave, so the base is on 3rd octave
+  renderMiniPiano(6, 1);  
   renderMiniGuitar(5);
   addScaleRootDropdownOptions();
   addScaleTypeDropdownOptions();
@@ -511,7 +506,6 @@ async function initializeApp() {
   document.getElementById("instrument-select").value = currentInstrument;
   updateInstrumentUI(currentInstrument);
 
-  updateInstrumentUI(currentInstrument);
   addJoystick();
 
 

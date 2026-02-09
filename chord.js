@@ -12,7 +12,7 @@ export class Chord {
         return [this.root, this.third, this.fifth, this.seventh, this.ninth]
     }
 
-    static transformChord(chord, scale, degree,transform) {
+    static transformChord(chord, scale, degree, transform) {
         switch (transform) {
             case 'base':
                 break;
